@@ -1,0 +1,46 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Loan Product')}"></head>
+<body>
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+<main class="container" style="max-width: 640px;">
+    <h2 th:text="${product.id} != null ? 'Edit Loan Product' : 'New Loan Product'">New Product</h2>
+    <div class="card p-4">
+        <form th:action="@{/loan-products}" th:object="${product}" method="post">
+            <input type="hidden" th:field="*{id}"/>
+            <div class="mb-3">
+                <label class="form-label">Code</label>
+                <input class="form-control" th:field="*{code}" required/>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Name</label>
+                <input class="form-control" th:field="*{name}" required/>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Annual Interest Rate (%)</label>
+                <input type="number" step="0.001" class="form-control" th:field="*{annualInterestRate}" required/>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Default Term (months)</label>
+                <input type="number" class="form-control" th:field="*{defaultTermMonths}" required/>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Standard Application Fee</label>
+                <input type="number" step="0.01" min="0" class="form-control" th:field="*{applicationFeeAmount}" required/>
+                <div class="form-text">Non-refundable fee charged when a loan under this product is disbursed. Posted to Fees &amp; Charges Income.</div>
+            </div>
+            <div class="form-check mb-3">
+                <input type="checkbox" class="form-check-input" th:field="*{active}"/>
+                <label class="form-check-label">Active</label>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Description</label>
+                <textarea class="form-control" th:field="*{description}"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Save</button>
+            <a href="/loan-products" class="btn btn-outline-secondary">Cancel</a>
+        </form>
+    </div>
+</main>
+</body>
+</html>

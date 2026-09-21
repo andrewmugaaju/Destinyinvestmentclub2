@@ -1,0 +1,30 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Deposits')}"></head>
+<body>
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+<main class="container">
+    <div th:replace="~{fragments/alerts :: alerts}"></div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Deposit Transactions</h2>
+        <a class="btn btn-primary" href="/deposits/new">+ Record a Deposit</a>
+    </div>
+    <div class="card p-3">
+        <table class="table table-hover">
+            <thead><tr><th>Reference</th><th>Date</th><th>Member / Group</th><th class="money">Total</th><th>Recorded By</th><th></th></tr></thead>
+            <tbody>
+            <tr th:each="d : ${deposits}">
+                <td th:text="${d.reference}">DEP-...</td>
+                <td th:text="${d.transactionDate}">-</td>
+                <td th:text="${d.client != null ? d.client.fullName : (d.group != null ? d.group.groupName : '-')}">-</td>
+                <td class="money" th:text="${#numbers.formatDecimal(d.totalAmount,1,'COMMA',2,'POINT')}">0.00</td>
+                <td th:text="${d.createdBy}">-</td>
+                <td><a class="btn btn-sm btn-outline-primary" th:href="@{/deposits/{id}(id=${d.id})}">View</a></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(deposits)}"><td colspan="6" class="text-muted">No deposits recorded yet.</td></tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,40 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Edit User')}"></head>
+<body>
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+<main class="container" style="max-width: 640px;">
+    <h2 th:text="'Edit ' + ${user.username}">Edit User</h2>
+    <div class="card p-4 mb-3">
+        <form th:action="@{/users/{id}(id=${user.id})}" method="post">
+            <div class="mb-3">
+                <label class="form-label">Roles</label>
+                <div class="form-check" th:each="r : ${roleOptions}">
+                    <input class="form-check-input" type="checkbox" name="roles" th:value="${r}" th:id="${'role-' + r}"
+                           th:checked="${user.roles.![name].contains(r)}"/>
+                    <label class="form-check-label" th:for="${'role-' + r}" th:text="${r}">ROLE</label>
+                </div>
+            </div>
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" name="enabled" value="true" th:checked="${user.enabled}"/>
+                <label class="form-check-label">Enabled</label>
+            </div>
+            <button type="submit" class="btn btn-primary">Save</button>
+            <a href="/users" class="btn btn-outline-secondary">Cancel</a>
+        </form>
+    </div>
+
+    <div class="card p-4">
+        <h5>Reset Password</h5>
+        <form th:action="@{/users/{id}/reset-password(id=${user.id})}" method="post" class="row g-2 align-items-end">
+            <div class="col-md-8">
+                <input type="password" class="form-control" name="newPassword" placeholder="New password" required/>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-outline-danger w-100">Reset Password</button>
+            </div>
+        </form>
+    </div>
+</main>
+</body>
+</html>

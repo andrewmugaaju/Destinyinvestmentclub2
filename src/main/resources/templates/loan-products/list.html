@@ -1,0 +1,31 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Loan Products')}"></head>
+<body>
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+<main class="container">
+    <div th:replace="~{fragments/alerts :: alerts}"></div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Loan Products</h2>
+        <a class="btn btn-primary" href="/loan-products/new">+ New Product</a>
+    </div>
+    <div class="card p-3">
+        <table class="table table-hover">
+            <thead><tr><th>Code</th><th>Name</th><th>Annual Interest %</th><th>Default Term (months)</th><th class="money">Application Fee</th><th>Active</th><th></th></tr></thead>
+            <tbody>
+            <tr th:each="p : ${products}">
+                <td th:text="${p.code}">LP01</td>
+                <td th:text="${p.name}">Business Loan</td>
+                <td th:text="${p.annualInterestRate}">12.000</td>
+                <td th:text="${p.defaultTermMonths}">12</td>
+                <td class="money" th:text="${#numbers.formatDecimal(p.applicationFeeAmount,1,'COMMA',2,'POINT')}">0.00</td>
+                <td th:text="${p.active}">true</td>
+                <td><a class="btn btn-sm btn-outline-secondary" th:href="@{/loan-products/{id}/edit(id=${p.id})}">Edit</a></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(products)}"><td colspan="7" class="text-muted">No loan products yet.</td></tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+</body>
+</html>

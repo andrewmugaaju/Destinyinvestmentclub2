@@ -1,0 +1,30 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Savings Accounts')}"></head>
+<body>
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+<main class="container">
+    <div th:replace="~{fragments/alerts :: alerts}"></div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Savings Accounts</h2>
+        <a class="btn btn-primary" href="/savings-accounts/new">+ Open Account</a>
+    </div>
+    <div class="card p-3">
+        <table class="table table-hover">
+            <thead><tr><th>Account #</th><th>Owner</th><th>Product</th><th class="money">Balance</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+            <tr th:each="a : ${accounts}">
+                <td th:text="${a.accountNumber}">SB000001</td>
+                <td th:text="${a.ownerName}">-</td>
+                <td th:text="${a.savingsProduct.name}">-</td>
+                <td class="money" th:text="${#numbers.formatDecimal(a.balance,1,'COMMA',2,'POINT')}">0.00</td>
+                <td><span class="badge bg-secondary" th:text="${a.status}">ACTIVE</span></td>
+                <td><a class="btn btn-sm btn-outline-primary" th:href="@{/savings-accounts/{id}(id=${a.id})}">View</a></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(accounts)}"><td colspan="6" class="text-muted">No savings accounts yet.</td></tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+</body>
+</html>

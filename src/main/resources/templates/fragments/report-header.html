@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="header(title, subtitle)" class="report-heading text-center mb-4">
+    <div class="report-heading-brand">Destiny Investment Club</div>
+    <h2 class="report-heading-title" th:text="${title}">Report</h2>
+    <div class="report-heading-subtitle" th:if="${subtitle}" th:text="${subtitle}">-</div>
+</div>
+</body>
+</html>

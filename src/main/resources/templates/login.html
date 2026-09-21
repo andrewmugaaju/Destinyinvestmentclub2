@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Login')}"></head>
+<body class="d-flex align-items-center" style="min-height:100vh;">
+<div class="container" style="max-width: 420px;">
+    <div class="card p-4">
+        <h3 class="mb-1 text-center">Destiny Investment Club</h3>
+        <p class="text-muted text-center mb-4">Savings &amp; Loans Management</p>
+
+        <div class="alert alert-danger" th:if="${param.error}">Invalid username or password.</div>
+        <div class="alert alert-success" th:if="${param.logout}">You have been logged out.</div>
+
+        <form th:action="@{/login}" method="post">
+            <div class="mb-3">
+                <label class="form-label">Username</label>
+                <input type="text" name="username" class="form-control" required autofocus/>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Password</label>
+                <input type="password" name="password" class="form-control" required/>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Sign in</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>

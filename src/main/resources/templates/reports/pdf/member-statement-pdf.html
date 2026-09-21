@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Member Statement</title>
+    <th:block th:replace="~{reports/pdf/fragments/pdf-style :: style}"></th:block>
+    <style>
+        .statement-summary { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+        .statement-summary td { border: none; padding: 4px 8px; font-size: 10.5px; }
+        .statement-summary .label { color: #6b7280; }
+        .statement-summary .value { font-weight: bold; text-align: right; }
+    </style>
+</head>
+<body>
+    <div class="letterhead">
+        <div class="brand-mark">DIC</div>
+        <div class="club-name">Destiny Investment Club</div>
+        <div class="report-title">Member Statement</div>
+        <div class="meta">
+            <strong th:text="${report.client.fullName}">Member Name</strong> (<span th:text="${report.client.clientNumber}">CL00001</span>)<br/>
+            Period: <strong th:text="${fromDate}">2026-01-01</strong> to <strong th:text="${toDate}">2026-01-31</strong>
+        </div>
+    </div>
+
+    <table class="statement-summary">
+        <tr>
+            <td class="label">Opening Savings Balance</td>
+            <td class="value" th:text="${#numbers.formatDecimal(report.openingSavingsBalance,1,'COMMA',2,'POINT')}">0.00</td>
+            <td class="label">Opening Loan Balance</td>
+            <td class="value" th:text="${#numbers.formatDecimal(report.openingLoanBalance,1,'COMMA',2,'POINT')}">0.00</td>
+        </tr>
+        <tr>
+            <td class="label">Closing Savings Balance</td>
+            <td class="value" th:text="${#numbers.formatDecimal(report.closingSavingsBalance,1,'COMMA',2,'POINT')}">0.00</td>
+            <td class="label">Closing Loan Balance</td>
+            <td class="value" th:text="${#numbers.formatDecimal(report.closingLoanBalance,1,'COMMA',2,'POINT')}">0.00</td>
+        </tr>
+    </table>
+
+    <table>
+        <thead>
+        <tr>
+            <th>Date</th><th>Description</th><th>Reference</th>
+            <th class="money">Savings</th><th class="money">Savings Bal.</th>
+            <th class="money">Loan</th><th class="money">Loan Bal.</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="r : ${report.rows}">
+            <td th:text="${r.date}">-</td>
+            <td th:text="${r.description}">-</td>
+            <td th:text="${r.reference}">-</td>
+            <td class="money" th:text="${r.savingsAmount != null} ? ${#numbers.formatDecimal(r.savingsAmount,1,'COMMA',2,'POINT')} : ''"></td>
+            <td class="money" th:text="${#numbers.formatDecimal(r.savingsBalance,1,'COMMA',2,'POINT')}">0.00</td>
+            <td class="money" th:text="${r.loanAmount != null} ? ${#numbers.formatDecimal(r.loanAmount,1,'COMMA',2,'POINT')} : ''"></td>
+            <td class="money" th:text="${#numbers.formatDecimal(r.loanBalance,1,'COMMA',2,'POINT')}">0.00</td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(report.rows)}"><td colspan="7">No savings or loan movement in this period.</td></tr>
+        </tbody>
+    </table>
+
+    <div class="footer-note">
+        Generated <span th:text="${generatedAt}">-</span> by <span th:text="${generatedBy}">-</span>
+    </div>
+</body>
+</html>

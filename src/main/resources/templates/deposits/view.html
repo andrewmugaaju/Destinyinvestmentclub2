@@ -1,0 +1,33 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Deposit Details')}"></head>
+<body>
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+<main class="container">
+    <h2 th:text="${deposit.reference}">DEP-...</h2>
+    <div class="card p-3 mb-3">
+        <div class="row">
+            <div class="col-md-3"><strong>Date</strong><br/><span th:text="${deposit.transactionDate}">-</span></div>
+            <div class="col-md-3"><strong>Member / Group</strong><br/><span th:text="${deposit.client != null ? deposit.client.fullName : (deposit.group != null ? deposit.group.groupName : '-')}">-</span></div>
+            <div class="col-md-3"><strong>Total Amount</strong><br/><span th:text="${#numbers.formatDecimal(deposit.totalAmount,1,'COMMA',2,'POINT')}">0.00</span></div>
+            <div class="col-md-3"><strong>Recorded By</strong><br/><span th:text="${deposit.createdBy}">-</span></div>
+        </div>
+    </div>
+
+    <div class="card p-3">
+        <h5>Allocation</h5>
+        <table class="table table-sm">
+            <thead><tr><th>Type</th><th>Account</th><th>Product</th><th class="money">Amount</th></tr></thead>
+            <tbody>
+            <tr th:each="a : ${allocationViews}">
+                <td th:text="${a.allocationType == T(com.destiny.club.domain.deposit.AllocationType).SAVINGS_DEPOSIT} ? 'Savings Deposit' : 'Loan Repayment'">-</td>
+                <td th:text="${a.accountNumber}">-</td>
+                <td th:text="${a.productName}">-</td>
+                <td class="money" th:text="${#numbers.formatDecimal(a.amount,1,'COMMA',2,'POINT')}">0.00</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+</body>
+</html>

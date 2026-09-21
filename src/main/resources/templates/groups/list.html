@@ -1,0 +1,32 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Groups')}"></head>
+<body>
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+<main class="container">
+    <div th:replace="~{fragments/alerts :: alerts}"></div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Groups</h2>
+        <a class="btn btn-primary" href="/groups/new">+ New Group</a>
+    </div>
+    <div class="card p-3">
+        <table class="table table-hover">
+            <thead><tr><th>Group #</th><th>Name</th><th>Meeting Day</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+            <tr th:each="g : ${groups}">
+                <td th:text="${g.groupNumber}">GRP0001</td>
+                <td th:text="${g.groupName}">Group A</td>
+                <td th:text="${g.meetingDay}">-</td>
+                <td><span class="badge bg-secondary" th:text="${g.status}">ACTIVE</span></td>
+                <td>
+                    <a class="btn btn-sm btn-outline-primary" th:href="@{/groups/{id}(id=${g.id})}">View</a>
+                    <a class="btn btn-sm btn-outline-secondary" th:href="@{/groups/{id}/edit(id=${g.id})}">Edit</a>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(groups)}"><td colspan="5" class="text-muted">No groups yet.</td></tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+</body>
+</html>

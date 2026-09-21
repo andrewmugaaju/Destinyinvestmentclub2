@@ -1,0 +1,14 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Action Failed')}"></head>
+<body>
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+<main class="container" style="max-width: 640px;">
+    <div class="alert alert-danger">
+        <h5>This action could not be completed</h5>
+        <p th:text="${message}">Error message</p>
+    </div>
+    <a class="btn btn-secondary" th:href="${backUrl}">Go Back</a>
+</main>
+</body>
+</html>

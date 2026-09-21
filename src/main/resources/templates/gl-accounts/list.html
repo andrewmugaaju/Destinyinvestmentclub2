@@ -1,0 +1,28 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Chart of Accounts')}"></head>
+<body>
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+<main class="container">
+    <div th:replace="~{fragments/alerts :: alerts}"></div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Chart of Accounts</h2>
+        <a class="btn btn-primary" href="/gl-accounts/new">+ New Account</a>
+    </div>
+    <div class="card p-3">
+        <table class="table table-hover">
+            <thead><tr><th>Code</th><th>Name</th><th>Type</th><th>System</th><th>Active</th></tr></thead>
+            <tbody>
+            <tr th:each="a : ${accounts}">
+                <td th:text="${a.code}">1000</td>
+                <td th:text="${a.name}">Cash</td>
+                <td th:text="${a.accountType}">ASSET</td>
+                <td th:text="${a.systemAccount} ? 'Yes' : 'No'">No</td>
+                <td th:text="${a.active} ? 'Yes' : 'No'">Yes</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+</body>
+</html>

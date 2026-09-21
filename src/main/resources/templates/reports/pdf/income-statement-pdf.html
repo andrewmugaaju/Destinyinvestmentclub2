@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Income and Expenditure</title>
+    <th:block th:replace="~{reports/pdf/fragments/pdf-style :: style}"></th:block>
+</head>
+<body>
+    <div class="letterhead">
+        <div class="brand-mark">DIC</div>
+        <div class="club-name">Destiny Investment Club</div>
+        <div class="report-title">Income &amp; Expenditure Statement</div>
+        <div class="meta">Period: <strong th:text="${fromDate}">2026-01-01</strong> to <strong th:text="${toDate}">2026-01-31</strong></div>
+    </div>
+
+    <div class="section-title">Income</div>
+    <table>
+        <tbody>
+        <tr th:each="i : ${report.income}">
+            <td th:text="${i.code} + ' - ' + ${i.name}">-</td>
+            <td class="money" th:text="${#numbers.formatDecimal(i.amount,1,'COMMA',2,'POINT')}">0.00</td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(report.income)}"><td colspan="2">No income for this period.</td></tr>
+        </tbody>
+        <tfoot>
+        <tr><td>Total Income</td><td class="money" th:text="${#numbers.formatDecimal(report.totalIncome,1,'COMMA',2,'POINT')}">0.00</td></tr>
+        </tfoot>
+    </table>
+
+    <div class="section-title">Expenditure</div>
+    <table>
+        <tbody>
+        <tr th:each="e : ${report.expenses}">
+            <td th:text="${e.code} + ' - ' + ${e.name}">-</td>
+            <td class="money" th:text="${#numbers.formatDecimal(e.amount,1,'COMMA',2,'POINT')}">0.00</td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(report.expenses)}"><td colspan="2">No expenditure for this period.</td></tr>
+        </tbody>
+        <tfoot>
+        <tr><td>Total Expenditure</td><td class="money" th:text="${#numbers.formatDecimal(report.totalExpenses,1,'COMMA',2,'POINT')}">0.00</td></tr>
+        </tfoot>
+    </table>
+
+    <div class="summary-box">
+        Net Surplus / (Deficit) for the Period: <span th:text="${#numbers.formatDecimal(report.netSurplus,1,'COMMA',2,'POINT')}">0.00</span>
+    </div>
+
+    <div class="footer-note">
+        Generated <span th:text="${generatedAt}">-</span> by <span th:text="${generatedBy}">-</span>
+    </div>
+</body>
+</html>

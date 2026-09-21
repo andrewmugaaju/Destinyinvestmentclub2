@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Trial Balance</title>
+    <th:block th:replace="~{reports/pdf/fragments/pdf-style :: style}"></th:block>
+</head>
+<body>
+    <div class="letterhead">
+        <div class="brand-mark">DIC</div>
+        <div class="club-name">Destiny Investment Club</div>
+        <div class="report-title">Trial Balance</div>
+        <div class="meta">As of <strong th:text="${asOfDate}">2026-01-01</strong></div>
+    </div>
+
+    <table>
+        <thead>
+        <tr><th>Code</th><th>Account</th><th>Type</th><th class="money">Debit</th><th class="money">Credit</th></tr>
+        </thead>
+        <tbody>
+        <tr th:each="l : ${report.lines}">
+            <td th:text="${l.code}">1000</td>
+            <td th:text="${l.name}">Cash</td>
+            <td th:text="${l.accountType}">ASSET</td>
+            <td class="money" th:text="${l.debit.signum() != 0} ? ${#numbers.formatDecimal(l.debit,1,'COMMA',2,'POINT')} : ''"></td>
+            <td class="money" th:text="${l.credit.signum() != 0} ? ${#numbers.formatDecimal(l.credit,1,'COMMA',2,'POINT')} : ''"></td>
+        </tr>
+        </tbody>
+        <tfoot>
+        <tr>
+            <td colspan="3">Total</td>
+            <td class="money" th:text="${#numbers.formatDecimal(report.totalDebit,1,'COMMA',2,'POINT')}">0.00</td>
+            <td class="money" th:text="${#numbers.formatDecimal(report.totalCredit,1,'COMMA',2,'POINT')}">0.00</td>
+        </tr>
+        </tfoot>
+    </table>
+
+    <div th:class="${report.balanced} ? 'status-ok' : 'status-bad'"
+         th:text="${report.balanced} ? 'Trial balance is balanced.' : 'Trial balance is NOT balanced - please investigate.'"></div>
+
+    <div class="footer-note">
+        Generated <span th:text="${generatedAt}">-</span> by <span th:text="${generatedBy}">-</span>
+    </div>
+</body>
+</html>

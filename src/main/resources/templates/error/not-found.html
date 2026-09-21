@@ -1,0 +1,14 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Not Found')}"></head>
+<body>
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+<main class="container" style="max-width: 640px;">
+    <div class="alert alert-warning">
+        <h5>Not found</h5>
+        <p th:text="${message}">The requested item could not be found.</p>
+    </div>
+    <a class="btn btn-secondary" href="/dashboard">Back to Dashboard</a>
+</main>
+</body>
+</html>

@@ -1,0 +1,35 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Clients')}"></head>
+<body>
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+<main class="container">
+    <div th:replace="~{fragments/alerts :: alerts}"></div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Clients</h2>
+        <a class="btn btn-primary" href="/clients/new">+ New Client</a>
+    </div>
+    <div class="card p-3">
+        <table class="table table-hover">
+            <thead>
+            <tr><th>Client #</th><th>Name</th><th>Phone</th><th>Group</th><th>Status</th><th></th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="c : ${clients}">
+                <td th:text="${c.clientNumber}">CL00001</td>
+                <td th:text="${c.fullName}">Jane Doe</td>
+                <td th:text="${c.phone}">-</td>
+                <td th:text="${c.group != null ? c.group.groupName : '-'}">-</td>
+                <td><span class="badge bg-secondary" th:text="${c.status}">ACTIVE</span></td>
+                <td>
+                    <a class="btn btn-sm btn-outline-primary" th:href="@{/clients/{id}(id=${c.id})}">View</a>
+                    <a class="btn btn-sm btn-outline-secondary" th:href="@{/clients/{id}/edit(id=${c.id})}">Edit</a>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(clients)}"><td colspan="6" class="text-muted">No clients yet.</td></tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+</body>
+</html>

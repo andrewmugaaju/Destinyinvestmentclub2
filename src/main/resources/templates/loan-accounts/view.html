@@ -1,0 +1,115 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/head :: head(title='Loan Account')}"></head>
+<body>
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+<main class="container">
+    <div th:replace="~{fragments/alerts :: alerts}"></div>
+    <div class="d-flex justify-content-between align-items-center">
+        <h2 th:text="${loan.loanAccountNumber}">LN000001</h2>
+        <span class="badge bg-secondary fs-6" th:text="${loan.status}">PENDING</span>
+    </div>
+
+    <div class="card p-3 mb-3">
+        <div class="row">
+            <div class="col-md-3"><strong>Borrower</strong><br/><span th:text="${loan.borrowerName}">-</span></div>
+            <div class="col-md-3"><strong>Product</strong><br/><span th:text="${loan.loanProduct.name}">-</span></div>
+            <div class="col-md-2"><strong>Principal</strong><br/><span th:text="${#numbers.formatDecimal(loan.principalAmount,1,'COMMA',2,'POINT')}">0.00</span></div>
+            <div class="col-md-2"><strong>Rate (p.a.)</strong><br/><span th:text="${loan.annualInterestRate} + '%'">0%</span></div>
+            <div class="col-md-2"><strong>Term</strong><br/><span th:text="${loan.termMonths} + ' months'">-</span></div>
+        </div>
+        <div class="row mt-2">
+            <div class="col-md-3"><strong>Application Fee</strong><br/><span th:text="${#numbers.formatDecimal(loan.applicationFeeAmount,1,'COMMA',2,'POINT')}">0.00</span></div>
+            <div class="col-md-3" th:if="${loan.status.name() != 'PENDING' and loan.status.name() != 'REJECTED'}"><strong>Net Disbursement</strong><br/><span th:text="${#numbers.formatDecimal(loan.principalAmount.subtract(loan.applicationFeeAmount),1,'COMMA',2,'POINT')}">0.00</span></div>
+        </div>
+        <hr/>
+        <div class="row">
+            <div class="col-md-3"><strong>Outstanding Principal</strong><br/><span th:text="${#numbers.formatDecimal(loan.outstandingPrincipal,1,'COMMA',2,'POINT')}">0.00</span></div>
+            <div class="col-md-3"><strong>Outstanding Interest</strong><br/><span th:text="${#numbers.formatDecimal(loan.outstandingInterest,1,'COMMA',2,'POINT')}">0.00</span></div>
+            <div class="col-md-3"><strong>Total Outstanding</strong><br/><span th:text="${#numbers.formatDecimal(loan.totalOutstanding,1,'COMMA',2,'POINT')}">0.00</span></div>
+        </div>
+    </div>
+
+    <div class="card p-3 mb-3" th:if="${loan.status.name() == 'PENDING'}" sec:authorize="hasAnyRole('ADMIN','MANAGER')">
+        <h5>Loan Application Review</h5>
+        <form th:action="@{/loan-accounts/{id}/approve(id=${loan.id})}" method="post" class="d-inline">
+            <button type="submit" class="btn btn-success">Approve</button>
+        </form>
+        <form th:action="@{/loan-accounts/{id}/reject(id=${loan.id})}" method="post" class="d-inline">
+            <button type="submit" class="btn btn-outline-danger">Reject</button>
+        </form>
+    </div>
+
+    <div class="card p-3 mb-3" th:if="${loan.status.name() == 'APPROVED'}" sec:authorize="hasAnyRole('ADMIN','MANAGER')">
+        <h5>Disburse Loan</h5>
+        <form th:action="@{/loan-accounts/{id}/disburse(id=${loan.id})}" method="post" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">Disbursement Date</label>
+                <input type="date" name="disbursementDate" class="form-control" th:value="${T(java.time.LocalDate).now()}"/>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary">Disburse</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="card p-3 mb-3" th:if="${loan.status.name() == 'ACTIVE'}">
+        <h5>Record a Repayment</h5>
+        <form th:action="@{/loan-accounts/{id}/repay(id=${loan.id})}" method="post" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label">Amount</label>
+                <input type="number" step="0.01" name="amount" class="form-control" required/>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Date</label>
+                <input type="date" name="transactionDate" class="form-control" th:value="${T(java.time.LocalDate).now()}"/>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Narration</label>
+                <input type="text" name="narration" class="form-control"/>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Repay</button>
+            </div>
+        </form>
+        <div class="form-text">For a combined savings + loan repayment receipt, use the <a href="/deposits/new">Deposit Screen</a> instead.</div>
+    </div>
+
+    <div class="card p-3 mb-3" th:if="${!#lists.isEmpty(loan.installments)}">
+        <h5>Repayment Schedule</h5>
+        <table class="table table-sm">
+            <thead><tr><th>#</th><th>Due Date</th><th class="money">Principal</th><th class="money">Interest</th><th class="money">Total</th><th class="money">Paid</th><th>Status</th></tr></thead>
+            <tbody>
+            <tr th:each="i : ${loan.installments}">
+                <td th:text="${i.installmentNumber}">1</td>
+                <td th:text="${i.dueDate}">-</td>
+                <td class="money" th:text="${#numbers.formatDecimal(i.principalDue,1,'COMMA',2,'POINT')}">0.00</td>
+                <td class="money" th:text="${#numbers.formatDecimal(i.interestDue,1,'COMMA',2,'POINT')}">0.00</td>
+                <td class="money" th:text="${#numbers.formatDecimal(i.totalDue,1,'COMMA',2,'POINT')}">0.00</td>
+                <td class="money" th:text="${#numbers.formatDecimal(i.principalPaid.add(i.interestPaid),1,'COMMA',2,'POINT')}">0.00</td>
+                <td><span class="badge" th:classappend="${i.fullyPaid} ? 'bg-success' : 'bg-warning text-dark'" th:text="${i.fullyPaid} ? 'Paid' : 'Pending'"></span></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card p-3">
+        <h5>Transaction History</h5>
+        <table class="table table-sm">
+            <thead><tr><th>Date</th><th>Type</th><th class="money">Amount</th><th class="money">Principal</th><th class="money">Interest</th><th>Narration</th></tr></thead>
+            <tbody>
+            <tr th:each="t : ${transactions}">
+                <td th:text="${t.transactionDate}">-</td>
+                <td th:text="${t.transactionType}">-</td>
+                <td class="money" th:text="${#numbers.formatDecimal(t.amount,1,'COMMA',2,'POINT')}">0.00</td>
+                <td class="money" th:text="${#numbers.formatDecimal(t.principalPortion,1,'COMMA',2,'POINT')}">0.00</td>
+                <td class="money" th:text="${#numbers.formatDecimal(t.interestPortion,1,'COMMA',2,'POINT')}">0.00</td>
+                <td th:text="${t.narration}">-</td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(transactions)}"><td colspan="6" class="text-muted">No transactions yet.</td></tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+</body>
+</html>

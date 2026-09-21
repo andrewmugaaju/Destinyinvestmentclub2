@@ -1,0 +1,32 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Journal Entry')}"></head>
+<body>
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+<main class="container">
+    <h2 th:text="${entry.reference}">JE-...</h2>
+    <div class="card p-3 mb-3">
+        <div class="row">
+            <div class="col-md-3"><strong>Date</strong><br/><span th:text="${entry.transactionDate}">-</span></div>
+            <div class="col-md-3"><strong>Source</strong><br/><span th:text="${entry.sourceType}">-</span></div>
+            <div class="col-md-3"><strong>Created By</strong><br/><span th:text="${entry.createdBy}">-</span></div>
+        </div>
+        <hr/>
+        <div><strong>Description</strong><br/><span th:text="${entry.description}">-</span></div>
+    </div>
+    <div class="card p-3">
+        <table class="table table-sm">
+            <thead><tr><th>Account</th><th class="money">Debit</th><th class="money">Credit</th><th>Narration</th></tr></thead>
+            <tbody>
+            <tr th:each="l : ${entry.lines}">
+                <td th:text="${l.glAccount.code} + ' - ' + ${l.glAccount.name}">-</td>
+                <td class="money" th:text="${l.entryType.name() == 'DEBIT'} ? ${#numbers.formatDecimal(l.amount,1,'COMMA',2,'POINT')} : ''"></td>
+                <td class="money" th:text="${l.entryType.name() == 'CREDIT'} ? ${#numbers.formatDecimal(l.amount,1,'COMMA',2,'POINT')} : ''"></td>
+                <td th:text="${l.narration}">-</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+</body>
+</html>

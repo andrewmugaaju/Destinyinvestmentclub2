@@ -1,0 +1,68 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Client Details')}"></head>
+<body>
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+<main class="container">
+    <div class="d-flex justify-content-between">
+        <h2 th:text="${client.fullName}">Jane Doe</h2>
+        <div>
+            <a class="btn btn-outline-primary" th:href="@{/reports/member-statement(clientId=${client.id})}">
+                <i class="bi bi-file-earmark-text"></i> Statement
+            </a>
+            <a class="btn btn-outline-secondary" th:href="@{/clients/{id}/edit(id=${client.id})}">Edit</a>
+        </div>
+    </div>
+    <div class="card p-3 mb-3">
+        <div class="row">
+            <div class="col-md-3"><strong>Client #</strong><br th:text="${client.clientNumber}"/></div>
+            <div class="col-md-3"><strong>Phone</strong><br/><span th:text="${client.phone}">-</span></div>
+            <div class="col-md-3"><strong>Group</strong><br/><span th:text="${client.group != null ? client.group.groupName : '-'}">-</span></div>
+            <div class="col-md-3"><strong>Status</strong><br/><span th:text="${client.status}">-</span></div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="card p-3">
+                <div class="d-flex justify-content-between">
+                    <h5>Savings Accounts</h5>
+                    <a class="btn btn-sm btn-primary" th:href="@{/savings-accounts/new(clientId=${client.id})}">+ Open</a>
+                </div>
+                <table class="table table-sm">
+                    <thead><tr><th>Account</th><th>Product</th><th class="money">Balance</th></tr></thead>
+                    <tbody>
+                    <tr th:each="s : ${savingsAccounts}">
+                        <td><a th:href="@{/savings-accounts/{id}(id=${s.id})}" th:text="${s.accountNumber}">SB000001</a></td>
+                        <td th:text="${s.savingsProduct.name}">-</td>
+                        <td class="money" th:text="${#numbers.formatDecimal(s.balance,1,'COMMA',2,'POINT')}">0.00</td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(savingsAccounts)}"><td colspan="3" class="text-muted">None yet.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card p-3">
+                <div class="d-flex justify-content-between">
+                    <h5>Loan Accounts</h5>
+                    <a class="btn btn-sm btn-primary" th:href="@{/loan-accounts/new(clientId=${client.id})}">+ Apply</a>
+                </div>
+                <table class="table table-sm">
+                    <thead><tr><th>Loan #</th><th>Product</th><th>Status</th><th class="money">Outstanding</th></tr></thead>
+                    <tbody>
+                    <tr th:each="l : ${loanAccounts}">
+                        <td><a th:href="@{/loan-accounts/{id}(id=${l.id})}" th:text="${l.loanAccountNumber}">LN000001</a></td>
+                        <td th:text="${l.loanProduct.name}">-</td>
+                        <td th:text="${l.status}">-</td>
+                        <td class="money" th:text="${#numbers.formatDecimal(l.totalOutstanding,1,'COMMA',2,'POINT')}">0.00</td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(loanAccounts)}"><td colspan="4" class="text-muted">None yet.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

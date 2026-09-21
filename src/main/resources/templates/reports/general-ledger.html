@@ -1,0 +1,66 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='General Ledger')}"></head>
+<body>
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+<main class="container">
+    <div th:replace="~{fragments/report-header :: header(title='General Ledger', subtitle=${report != null} ? (${report.account.code} + ' - ' + ${report.account.name}) : null)}"></div>
+
+    <form method="get" th:action="@{/reports/general-ledger}" class="row g-2 mb-3 align-items-end">
+        <div class="col-md-4">
+            <label class="form-label">Account</label>
+            <select class="form-select" name="accountId" required>
+                <option value="">-- select account --</option>
+                <option th:each="a : ${accounts}" th:value="${a.id}"
+                        th:selected="${selectedAccountId != null and selectedAccountId == a.id}"
+                        th:text="${a.code} + ' - ' + ${a.name}"></option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">From</label>
+            <input type="date" class="form-control" name="fromDate" th:value="${fromDate}"/>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">To</label>
+            <input type="date" class="form-control" name="toDate" th:value="${toDate}"/>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-outline-primary w-100">Run</button>
+        </div>
+    </form>
+
+    <div class="card p-3" th:if="${report != null}">
+        <div class="d-flex justify-content-end mb-2">
+            <a class="btn btn-outline-secondary btn-sm" target="_blank"
+               th:href="@{/reports/general-ledger/pdf(accountId=${selectedAccountId},fromDate=${fromDate},toDate=${toDate})}">
+                <i class="bi bi-file-earmark-pdf"></i> Export to PDF
+            </a>
+        </div>
+        <table class="table table-sm">
+            <thead><tr><th>Date</th><th>Reference</th><th>Description</th><th class="money">Debit</th><th class="money">Credit</th><th class="money">Balance</th></tr></thead>
+            <tbody>
+            <tr>
+                <td colspan="5" class="fw-bold">Opening Balance</td>
+                <td class="money fw-bold" th:text="${#numbers.formatDecimal(report.openingBalance,1,'COMMA',2,'POINT')}">0.00</td>
+            </tr>
+            <tr th:each="r : ${report.rows}">
+                <td th:text="${r.date}">-</td>
+                <td th:text="${r.reference}">-</td>
+                <td th:text="${r.description}">-</td>
+                <td class="money" th:text="${r.debit.signum() != 0} ? ${#numbers.formatDecimal(r.debit,1,'COMMA',2,'POINT')} : ''"></td>
+                <td class="money" th:text="${r.credit.signum() != 0} ? ${#numbers.formatDecimal(r.credit,1,'COMMA',2,'POINT')} : ''"></td>
+                <td class="money" th:text="${#numbers.formatDecimal(r.runningBalance,1,'COMMA',2,'POINT')}">0.00</td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(report.rows)}"><td colspan="6" class="text-muted">No movement in this period.</td></tr>
+            </tbody>
+            <tfoot>
+            <tr class="fw-bold">
+                <td colspan="5">Closing Balance</td>
+                <td class="money" th:text="${#numbers.formatDecimal(report.closingBalance,1,'COMMA',2,'POINT')}">0.00</td>
+            </tr>
+            </tfoot>
+        </table>
+    </div>
+</main>
+</body>
+</html>

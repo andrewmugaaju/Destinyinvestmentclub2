@@ -1,0 +1,76 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Group Details')}"></head>
+<body>
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+<main class="container">
+    <div class="d-flex justify-content-between">
+        <h2 th:text="${group.groupName}">Group A</h2>
+        <a class="btn btn-outline-secondary" th:href="@{/groups/{id}/edit(id=${group.id})}">Edit</a>
+    </div>
+    <div class="card p-3 mb-3">
+        <div class="row">
+            <div class="col-md-4"><strong>Group #</strong><br th:text="${group.groupNumber}"/></div>
+            <div class="col-md-4"><strong>Meeting Day</strong><br/><span th:text="${group.meetingDay}">-</span></div>
+            <div class="col-md-4"><strong>Status</strong><br/><span th:text="${group.status}">-</span></div>
+        </div>
+    </div>
+
+    <div class="card p-3 mb-3">
+        <h5>Members</h5>
+        <table class="table table-sm">
+            <thead><tr><th>Client #</th><th>Name</th><th>Phone</th></tr></thead>
+            <tbody>
+            <tr th:each="m : ${members}">
+                <td th:text="${m.clientNumber}">-</td>
+                <td><a th:href="@{/clients/{id}(id=${m.id})}" th:text="${m.fullName}">-</a></td>
+                <td th:text="${m.phone}">-</td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(members)}"><td colspan="3" class="text-muted">No members yet.</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="card p-3">
+                <div class="d-flex justify-content-between">
+                    <h5>Group Savings Accounts</h5>
+                    <a class="btn btn-sm btn-primary" th:href="@{/savings-accounts/new(groupId=${group.id})}">+ Open</a>
+                </div>
+                <table class="table table-sm">
+                    <thead><tr><th>Account</th><th>Product</th><th class="money">Balance</th></tr></thead>
+                    <tbody>
+                    <tr th:each="s : ${savingsAccounts}">
+                        <td><a th:href="@{/savings-accounts/{id}(id=${s.id})}" th:text="${s.accountNumber}">-</a></td>
+                        <td th:text="${s.savingsProduct.name}">-</td>
+                        <td class="money" th:text="${#numbers.formatDecimal(s.balance,1,'COMMA',2,'POINT')}">0.00</td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(savingsAccounts)}"><td colspan="3" class="text-muted">None yet.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card p-3">
+                <div class="d-flex justify-content-between">
+                    <h5>Group Loan Accounts</h5>
+                    <a class="btn btn-sm btn-primary" th:href="@{/loan-accounts/new(groupId=${group.id})}">+ Apply</a>
+                </div>
+                <table class="table table-sm">
+                    <thead><tr><th>Loan #</th><th>Status</th><th class="money">Outstanding</th></tr></thead>
+                    <tbody>
+                    <tr th:each="l : ${loanAccounts}">
+                        <td><a th:href="@{/loan-accounts/{id}(id=${l.id})}" th:text="${l.loanAccountNumber}">-</a></td>
+                        <td th:text="${l.status}">-</td>
+                        <td class="money" th:text="${#numbers.formatDecimal(l.totalOutstanding,1,'COMMA',2,'POINT')}">0.00</td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(loanAccounts)}"><td colspan="3" class="text-muted">None yet.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>
