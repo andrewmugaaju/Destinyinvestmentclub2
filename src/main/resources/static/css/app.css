@@ -10,6 +10,47 @@ body {
     background-color: #f3f4f8;
 }
 
+/* ---------- Login page ---------- */
+
+.login-body {
+    min-height: 100vh;
+    background: linear-gradient(160deg, var(--sidebar-bg-from) 0%, var(--brand-primary) 55%, var(--sidebar-bg-to) 100%);
+}
+
+.login-card {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 20px 45px rgba(17, 24, 39, 0.35);
+}
+
+.login-logo {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+}
+
+.login-logo-mark {
+    width: 68px;
+    height: 68px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #818cf8, var(--brand-primary) 60%, var(--brand-primary-dark));
+    box-shadow: 0 10px 20px rgba(79, 70, 229, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.login-logo-mark i {
+    color: #ffffff;
+    font-size: 2rem;
+}
+
+.login-footnote {
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 0.8rem;
+    margin-top: 1.25rem;
+}
+
 /* ---------- Sidebar layout ---------- */
 
 .sidebar {
