@@ -1,10 +1,16 @@
 package com.destiny.club.web;
 
+import com.destiny.club.domain.loan.LoanAccount;
+import com.destiny.club.domain.loan.LoanStatus;
+import com.destiny.club.domain.savings.SavingsAccount;
+import com.destiny.club.domain.savings.SavingsAccountStatus;
 import com.destiny.club.security.CustomUserDetails;
 import com.destiny.club.service.AccountingService;
 import com.destiny.club.service.ClientService;
+import com.destiny.club.service.LoanService;
 import com.destiny.club.service.MemberStatementService;
 import com.destiny.club.service.PdfExportService;
+import com.destiny.club.service.SavingsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -16,11 +22,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAdjusters;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Controller
@@ -32,6 +40,8 @@ public class ReportController {
     private final PdfExportService pdfExportService;
     private final MemberStatementService memberStatementService;
     private final ClientService clientService;
+    private final LoanService loanService;
+    private final SavingsService savingsService;
 
     private static final DateTimeFormatter TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm");
 
@@ -168,6 +178,62 @@ public class ReportController {
         addGenerationMeta(model, principal);
         byte[] pdf = pdfExportService.renderPdf("reports/pdf/member-statement-pdf", model);
         return pdfResponse(pdf, "member-statement-" + report.getClient().getClientNumber() + ".pdf");
+    }
+
+    @GetMapping("/loans")
+    public String loans(@RequestParam(required = false) LoanStatus status, Model model) {
+        List<LoanAccount> loans = filterLoans(status);
+        model.addAttribute("loans", loans);
+        model.addAttribute("selectedStatus", status);
+        model.addAttribute("statuses", LoanStatus.values());
+        model.addAttribute("totalOutstanding", loans.stream().map(LoanAccount::getTotalOutstanding).reduce(BigDecimal.ZERO, BigDecimal::add));
+        return "reports/loans-report";
+    }
+
+    @GetMapping(value = "/loans/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> loansPdf(@RequestParam(required = false) LoanStatus status,
+                                            @AuthenticationPrincipal CustomUserDetails principal) {
+        List<LoanAccount> loans = filterLoans(status);
+        Map<String, Object> model = new HashMap<>();
+        model.put("loans", loans);
+        model.put("selectedStatus", status);
+        model.put("totalOutstanding", loans.stream().map(LoanAccount::getTotalOutstanding).reduce(BigDecimal.ZERO, BigDecimal::add));
+        addGenerationMeta(model, principal);
+        byte[] pdf = pdfExportService.renderPdf("reports/pdf/loans-report-pdf", model);
+        return pdfResponse(pdf, "loans-report.pdf");
+    }
+
+    private List<LoanAccount> filterLoans(LoanStatus status) {
+        return status != null ? loanService.findAll().stream().filter(l -> l.getStatus() == status).toList()
+                : loanService.findAll();
+    }
+
+    @GetMapping("/savings")
+    public String savings(@RequestParam(required = false) SavingsAccountStatus status, Model model) {
+        List<SavingsAccount> accounts = filterSavings(status);
+        model.addAttribute("accounts", accounts);
+        model.addAttribute("selectedStatus", status);
+        model.addAttribute("statuses", SavingsAccountStatus.values());
+        model.addAttribute("totalBalance", accounts.stream().map(SavingsAccount::getBalance).reduce(BigDecimal.ZERO, BigDecimal::add));
+        return "reports/savings-report";
+    }
+
+    @GetMapping(value = "/savings/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> savingsPdf(@RequestParam(required = false) SavingsAccountStatus status,
+                                              @AuthenticationPrincipal CustomUserDetails principal) {
+        List<SavingsAccount> accounts = filterSavings(status);
+        Map<String, Object> model = new HashMap<>();
+        model.put("accounts", accounts);
+        model.put("selectedStatus", status);
+        model.put("totalBalance", accounts.stream().map(SavingsAccount::getBalance).reduce(BigDecimal.ZERO, BigDecimal::add));
+        addGenerationMeta(model, principal);
+        byte[] pdf = pdfExportService.renderPdf("reports/pdf/savings-report-pdf", model);
+        return pdfResponse(pdf, "savings-report.pdf");
+    }
+
+    private List<SavingsAccount> filterSavings(SavingsAccountStatus status) {
+        return status != null ? savingsService.findAll().stream().filter(a -> a.getStatus() == status).toList()
+                : savingsService.findAll();
     }
 
     private void addGenerationMeta(Map<String, Object> model, CustomUserDetails principal) {

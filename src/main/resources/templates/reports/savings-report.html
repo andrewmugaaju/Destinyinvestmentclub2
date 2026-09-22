@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Savings Report')}"></head>
+<body>
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+<main class="container">
+    <div th:replace="~{fragments/report-header :: header(title='Savings Report', subtitle=${selectedStatus} != null ? ('Status: ' + ${selectedStatus}) : 'All savings accounts')}"></div>
+
+    <div class="d-flex justify-content-between align-items-end flex-wrap gap-2 mb-3">
+        <form method="get" th:action="@{/reports/savings}" class="row g-2 align-items-end">
+            <div class="col-auto">
+                <label class="form-label">Status</label>
+                <select class="form-select" name="status">
+                    <option value="">-- All statuses --</option>
+                    <option th:each="s : ${statuses}" th:value="${s}" th:text="${s}" th:selected="${selectedStatus == s}"></option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-outline-primary">Run</button>
+            </div>
+        </form>
+        <a class="btn btn-outline-secondary" target="_blank"
+           th:href="@{/reports/savings/pdf(status=${selectedStatus})}">
+            <i class="bi bi-file-earmark-pdf"></i> Export to PDF
+        </a>
+    </div>
+
+    <div class="card p-3">
+        <table class="table table-sm table-report">
+            <thead>
+            <tr><th>Account #</th><th>Owner</th><th>Product</th><th>Opened</th><th>Status</th><th class="money">Balance</th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="a : ${accounts}">
+                <td><a th:href="@{/savings-accounts/{id}(id=${a.id})}" th:text="${a.accountNumber}">SB000001</a></td>
+                <td th:text="${a.ownerName}">-</td>
+                <td th:text="${a.savingsProduct.name}">-</td>
+                <td th:text="${a.openedDate}">-</td>
+                <td><span class="badge bg-secondary" th:text="${a.status}">-</span></td>
+                <td class="money" th:text="${#numbers.formatDecimal(a.balance,1,'COMMA',2,'POINT')}">0.00</td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(accounts)}"><td colspan="6" class="text-muted">No savings accounts found.</td></tr>
+            </tbody>
+            <tfoot>
+            <tr class="fw-bold">
+                <td colspan="5">Total Balance</td>
+                <td class="money" th:text="${#numbers.formatDecimal(totalBalance,1,'COMMA',2,'POINT')}">0.00</td>
+            </tr>
+            </tfoot>
+        </table>
+    </div>
+</main>
+</body>
+</html>

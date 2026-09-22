@@ -27,10 +27,12 @@
             <div class="sidebar-heading">Savings</div>
             <a class="sidebar-link" href="/savings-accounts/deposit"><i class="bi bi-piggy-bank"></i><span>Savings Deposit</span></a>
             <a class="sidebar-link" href="/savings-products" sec:authorize="hasAnyRole('ADMIN','MANAGER')"><i class="bi bi-box-seam"></i><span>Savings Products</span></a>
+            <a class="sidebar-link" href="/reports/savings"><i class="bi bi-file-earmark-bar-graph"></i><span>Savings Report</span></a>
 
             <div class="sidebar-heading">Loans</div>
             <a class="sidebar-link" href="/loan-accounts/new"><i class="bi bi-cash-coin"></i><span>Loan Form</span></a>
             <a class="sidebar-link" href="/loan-products" sec:authorize="hasAnyRole('ADMIN','MANAGER')"><i class="bi bi-box-seam"></i><span>Loan Products</span></a>
+            <a class="sidebar-link" href="/reports/loans"><i class="bi bi-file-earmark-bar-graph"></i><span>Loan Report</span></a>
 
             <div class="sidebar-heading">Transactions</div>
             <a class="sidebar-link" href="/deposits"><i class="bi bi-wallet2"></i><span>Deposit Screen</span></a>
