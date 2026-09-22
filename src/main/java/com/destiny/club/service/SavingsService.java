@@ -62,6 +62,21 @@ public class SavingsService {
         return savingsAccountRepository.save(account);
     }
 
+    /**
+     * Returns the client's/group's existing active savings account under the given product, or
+     * silently opens a new one if they don't have one yet. Used by the Savings Deposit screen so
+     * that a teller never has to "open an account" as a separate step - the first deposit under a
+     * product opens it automatically.
+     */
+    @Transactional
+    public SavingsAccount findOrOpenAccount(Client client, Group group, SavingsProduct product) {
+        List<SavingsAccount> existing = client != null ? findByClient(client.getId()) : findByGroup(group.getId());
+        return existing.stream()
+                .filter(a -> a.getSavingsProduct().getId().equals(product.getId()) && a.getStatus() == SavingsAccountStatus.ACTIVE)
+                .findFirst()
+                .orElseGet(() -> openAccount(client, group, product, LocalDate.now()));
+    }
+
     private String generateAccountNumber() {
         long seq = savingsAccountRepository.count() + 1;
         String candidate;

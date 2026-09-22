@@ -6,7 +6,8 @@
 <main class="container">
     <div th:replace="~{fragments/alerts :: alerts}"></div>
     <h2>Savings Deposit</h2>
-    <p class="text-muted">Deposit money into a member's or group's savings account.</p>
+    <p class="text-muted">Deposit money into a member's or group's savings. Pick the product - if they don't already
+        have an account under it, one is opened automatically.</p>
 
     <div class="card p-4 mb-3">
         <h5>Step 1: Select Member or Group</h5>
@@ -30,7 +31,7 @@
                 </select>
             </div>
             <div class="col-md-2">
-                <button type="submit" class="btn btn-outline-primary w-100">Load Accounts</button>
+                <button type="submit" class="btn btn-outline-primary w-100">Load Products</button>
             </div>
         </form>
     </div>
@@ -38,16 +39,20 @@
     <div class="card p-4" th:if="${selectedClientId != null or selectedGroupId != null}">
         <h5>Step 2: Deposit Details</h5>
 
-        <div class="alert alert-warning" th:if="${#lists.isEmpty(savingsAccounts)}">
-            This member/group has no active savings account. <a th:href="@{/savings-accounts/new(clientId=${selectedClientId},groupId=${selectedGroupId})}">Open one first</a>.
+        <div class="alert alert-warning" th:if="${#lists.isEmpty(products)}">
+            There are no active savings products configured yet.
         </div>
 
-        <form th:if="${!#lists.isEmpty(savingsAccounts)}" th:action="@{/savings-accounts/deposit}" method="post">
+        <form th:if="${!#lists.isEmpty(products)}" th:action="@{/savings-accounts/deposit}" method="post">
+            <input type="hidden" name="clientId" th:value="${selectedClientId}"/>
+            <input type="hidden" name="groupId" th:value="${selectedGroupId}"/>
+
             <div class="mb-3">
-                <label class="form-label">Savings Account &amp; Product</label>
-                <select class="form-select" name="savingsAccountId" required>
-                    <option th:each="s : ${savingsAccounts}" th:value="${s.id}"
-                            th:text="${s.accountNumber} + ' - ' + ${s.ownerName} + ' - ' + ${s.savingsProduct.name} + ' (bal ' + ${#numbers.formatDecimal(s.balance,1,'COMMA',2,'POINT')} + ')'"></option>
+                <label class="form-label">Savings Product</label>
+                <select class="form-select" name="productId" required>
+                    <option th:each="p : ${products}" th:value="${p.id}"
+                            th:with="existing=${existingByProductId != null ? existingByProductId.get(p.id) : null}"
+                            th:text="${p.name} + ' (' + ${p.annualInterestRate} + '% p.a.)' + (${existing} != null ? ' - existing bal ' + ${#numbers.formatDecimal(existing.balance,1,'COMMA',2,'POINT')} : ' - new account')"></option>
                 </select>
             </div>
             <div class="row g-3">

@@ -4,6 +4,7 @@ import com.destiny.club.domain.client.Client;
 import com.destiny.club.domain.client.Group;
 import com.destiny.club.domain.savings.SavingsAccount;
 import com.destiny.club.domain.savings.SavingsAccountStatus;
+import com.destiny.club.domain.savings.SavingsProduct;
 import com.destiny.club.security.CustomUserDetails;
 import com.destiny.club.service.*;
 import lombok.RequiredArgsConstructor;
@@ -15,8 +16,9 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Controller
 @RequiredArgsConstructor
@@ -34,32 +36,11 @@ public class SavingsAccountController {
         return "savings-accounts/list";
     }
 
-    @GetMapping("/new")
-    public String newForm(@RequestParam(required = false) Long clientId,
-                           @RequestParam(required = false) Long groupId,
-                           Model model) {
-        model.addAttribute("clients", clientService.findAll());
-        model.addAttribute("groups", groupService.findAll());
-        model.addAttribute("products", savingsProductService.findActive());
-        model.addAttribute("selectedClientId", clientId);
-        model.addAttribute("selectedGroupId", groupId);
-        return "savings-accounts/form";
-    }
-
-    @PostMapping
-    public String open(@RequestParam(required = false) Long clientId,
-                        @RequestParam(required = false) Long groupId,
-                        @RequestParam Long productId,
-                        @RequestParam(required = false) LocalDate openedDate,
-                        RedirectAttributes redirectAttributes) {
-        Client client = clientId != null ? clientService.getById(clientId) : null;
-        Group group = groupId != null ? groupService.getById(groupId) : null;
-        var product = savingsProductService.getById(productId);
-        SavingsAccount account = savingsService.openAccount(client, group, product, openedDate);
-        redirectAttributes.addFlashAttribute("successMessage", "Savings account " + account.getAccountNumber() + " opened");
-        return "redirect:/savings-accounts/" + account.getId();
-    }
-
+    /**
+     * The Savings Deposit screen: pick a member/group, then a savings product. There is no
+     * separate "open an account" step - if they don't already have an active account under that
+     * product, one is opened automatically as part of recording the deposit.
+     */
     @GetMapping("/deposit")
     public String depositForm(@RequestParam(required = false) Long clientId,
                                @RequestParam(required = false) Long groupId,
@@ -68,29 +49,34 @@ public class SavingsAccountController {
         model.addAttribute("groups", groupService.findAll());
         model.addAttribute("selectedClientId", clientId);
         model.addAttribute("selectedGroupId", groupId);
+        model.addAttribute("products", savingsProductService.findActive());
 
-        List<SavingsAccount> accounts;
-        if (clientId != null) {
-            accounts = savingsService.findByClient(clientId);
-        } else if (groupId != null) {
-            accounts = savingsService.findByGroup(groupId);
-        } else {
-            accounts = Collections.emptyList();
+        if (clientId != null || groupId != null) {
+            List<SavingsAccount> existing = clientId != null
+                    ? savingsService.findByClient(clientId)
+                    : savingsService.findByGroup(groupId);
+            Map<Long, SavingsAccount> byProductId = existing.stream()
+                    .filter(a -> a.getStatus() == SavingsAccountStatus.ACTIVE)
+                    .collect(Collectors.toMap(a -> a.getSavingsProduct().getId(), a -> a, (a, b) -> a));
+            model.addAttribute("existingByProductId", byProductId);
         }
-        model.addAttribute("savingsAccounts", accounts.stream()
-                .filter(a -> a.getStatus() == SavingsAccountStatus.ACTIVE)
-                .toList());
         return "savings-accounts/deposit-form";
     }
 
     @PostMapping("/deposit")
-    public String deposit(@RequestParam Long savingsAccountId,
+    public String deposit(@RequestParam(required = false) Long clientId,
+                           @RequestParam(required = false) Long groupId,
+                           @RequestParam Long productId,
                            @RequestParam BigDecimal amount,
                            @RequestParam(required = false) LocalDate transactionDate,
                            @RequestParam(required = false) String narration,
                            @AuthenticationPrincipal CustomUserDetails principal,
                            RedirectAttributes redirectAttributes) {
-        SavingsAccount account = savingsService.getById(savingsAccountId);
+        Client client = clientId != null ? clientService.getById(clientId) : null;
+        Group group = groupId != null ? groupService.getById(groupId) : null;
+        SavingsProduct product = savingsProductService.getById(productId);
+
+        SavingsAccount account = savingsService.findOrOpenAccount(client, group, product);
         savingsService.depositWithPosting(account, amount, transactionDate, narration, principal.getUsername());
         redirectAttributes.addFlashAttribute("successMessage", "Deposit recorded to " + account.getAccountNumber());
         return "redirect:/savings-accounts/" + account.getId();
