@@ -42,8 +42,12 @@
         <div class="alert alert-warning" th:if="${#lists.isEmpty(products)}">
             There are no active savings products configured yet.
         </div>
+        <div class="alert alert-warning" th:if="${#lists.isEmpty(cashAccounts)}">
+            No payment channel accounts are configured yet. Mark at least one account as a "Payment channel" under
+            <a href="/gl-accounts">Chart of Accounts</a> before recording deposits.
+        </div>
 
-        <form th:if="${!#lists.isEmpty(products)}" th:action="@{/savings-accounts/deposit}" method="post">
+        <form th:if="${!#lists.isEmpty(products) and !#lists.isEmpty(cashAccounts)}" th:action="@{/savings-accounts/deposit}" method="post">
             <input type="hidden" name="clientId" th:value="${selectedClientId}"/>
             <input type="hidden" name="groupId" th:value="${selectedGroupId}"/>
 
@@ -54,6 +58,13 @@
                             th:with="existing=${existingByProductId != null ? existingByProductId.get(p.id) : null}"
                             th:text="${p.name} + ' (' + ${p.annualInterestRate} + '% p.a.)' + (${existing} != null ? ' - existing bal ' + ${#numbers.formatDecimal(existing.balance,1,'COMMA',2,'POINT')} : ' - new account')"></option>
                 </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Receiving Account</label>
+                <select class="form-select" name="cashAccountId" required>
+                    <option th:each="ca : ${cashAccounts}" th:value="${ca.id}" th:text="${ca.code} + ' - ' + ${ca.name}"></option>
+                </select>
+                <div class="form-text">Which till, bank account or mobile money channel actually received this cash.</div>
             </div>
             <div class="row g-3">
                 <div class="col-md-4">

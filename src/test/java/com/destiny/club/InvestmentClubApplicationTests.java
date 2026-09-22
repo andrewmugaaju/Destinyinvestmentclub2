@@ -1,5 +1,7 @@
 package com.destiny.club;
 
+import com.destiny.club.domain.accounting.GLAccount;
+import com.destiny.club.domain.accounting.GLCodes;
 import com.destiny.club.domain.client.Client;
 import com.destiny.club.domain.client.Group;
 import com.destiny.club.domain.loan.LoanAccount;
@@ -82,10 +84,11 @@ class InvestmentClubApplicationTests {
         loanProduct = loanProductService.save(loanProduct);
 
         SavingsAccount savingsAccount = savingsService.openAccount(client, null, savingsProduct, LocalDate.now());
+        GLAccount cashAccount = accountingService.getAccountByCode(GLCodes.CASH_AND_BANK);
 
         LoanAccount loan = loanService.apply(client, null, loanProduct, new BigDecimal("1000.00"), 6, new BigDecimal("20.00"));
         loan = loanService.approve(loan.getId(), "tester");
-        loan = loanService.disburse(loan.getId(), LocalDate.now(), "tester");
+        loan = loanService.disburse(loan.getId(), LocalDate.now(), "tester", cashAccount);
         assertThat(loanRepaymentInstallmentRepository.findByLoanAccountIdOrderByInstallmentNumberAsc(loan.getId())).hasSize(6);
         // Outstanding right after disbursement covers the principal plus the full scheduled interest for the term.
         BigDecimal outstandingBeforeRepayment = loan.getTotalOutstanding();
@@ -93,6 +96,7 @@ class InvestmentClubApplicationTests {
         // Combined deposit: 300 total = 100 to savings + 200 towards the loan repayment.
         DepositForm form = new DepositForm();
         form.setClientId(client.getId());
+        form.setCashAccountId(cashAccount.getId());
         form.setTransactionDate(LocalDate.now());
         form.setTotalAmount(new BigDecimal("300.00"));
 

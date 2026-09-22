@@ -42,8 +42,12 @@
         <div class="alert alert-warning" th:if="${#lists.isEmpty(savingsAccounts) and #lists.isEmpty(loanAccounts)}">
             This member/group has no active savings accounts or active loans to post against.
         </div>
+        <div class="alert alert-warning" th:if="${#lists.isEmpty(cashAccounts)}">
+            No payment channel accounts are configured yet. Mark at least one account as a "Payment channel" under
+            <a href="/gl-accounts">Chart of Accounts</a> before recording deposits.
+        </div>
 
-        <form th:action="@{/deposits}" method="post" id="depositForm">
+        <form th:if="${!#lists.isEmpty(cashAccounts)}" th:action="@{/deposits}" method="post" id="depositForm">
             <input type="hidden" name="clientId" th:value="${selectedClientId}"/>
             <input type="hidden" name="groupId" th:value="${selectedGroupId}"/>
 
@@ -56,7 +60,13 @@
                     <label class="form-label">Total Deposit Amount</label>
                     <input type="number" step="0.01" min="0.01" class="form-control" id="totalAmount" name="totalAmount" required/>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-3">
+                    <label class="form-label">Receiving Account</label>
+                    <select class="form-select" name="cashAccountId" required>
+                        <option th:each="ca : ${cashAccounts}" th:value="${ca.id}" th:text="${ca.code} + ' - ' + ${ca.name}"></option>
+                    </select>
+                </div>
+                <div class="col-md-3">
                     <label class="form-label">Narration (optional)</label>
                     <input type="text" class="form-control" name="narration"/>
                 </div>

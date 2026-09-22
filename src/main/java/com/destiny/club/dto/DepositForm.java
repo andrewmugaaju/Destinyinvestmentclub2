@@ -14,10 +14,19 @@ public class DepositForm {
 
     private Long clientId;
     private Long groupId;
+    private Long cashAccountId;
     private LocalDate transactionDate = LocalDate.now();
     private BigDecimal totalAmount;
     private String narration;
     private List<DepositAllocationForm> allocations = new ArrayList<>();
+
+    public Long getCashAccountId() {
+        return cashAccountId;
+    }
+
+    public void setCashAccountId(Long cashAccountId) {
+        this.cashAccountId = cashAccountId;
+    }
 
     public Long getClientId() {
         return clientId;

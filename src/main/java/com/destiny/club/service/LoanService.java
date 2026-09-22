@@ -126,7 +126,7 @@ public class LoanService {
     }
 
     @Transactional
-    public LoanAccount disburse(Long loanId, LocalDate disbursementDate, String createdBy) {
+    public LoanAccount disburse(Long loanId, LocalDate disbursementDate, String createdBy, GLAccount cashAccount) {
         LoanAccount loan = getById(loanId);
         if (loan.getStatus() != LoanStatus.APPROVED) {
             throw new BusinessException("Only approved loans can be disbursed");
@@ -151,7 +151,6 @@ public class LoanService {
         txn.setCreatedBy(createdBy);
         loanTransactionRepository.save(txn);
 
-        GLAccount cash = accountingService.getAccountByCode(GLCodes.CASH_AND_BANK);
         GLAccount loansReceivable = accountingService.getAccountByCode(GLCodes.LOANS_RECEIVABLE);
 
         // The borrower still owes the full principal, but the application fee is netted off the
@@ -161,7 +160,7 @@ public class LoanService {
 
         List<JournalEntryLine> lines = new ArrayList<>();
         lines.add(JournalEntryLine.debit(loansReceivable, loan.getPrincipalAmount(), "Disbursed to " + loan.getLoanAccountNumber()));
-        lines.add(JournalEntryLine.credit(cash, netCashOut, "Net cash disbursed"));
+        lines.add(JournalEntryLine.credit(cashAccount, netCashOut, "Net cash disbursed"));
         if (fee.compareTo(BigDecimal.ZERO) > 0) {
             GLAccount feesIncome = accountingService.getAccountByCode(GLCodes.FEES_AND_CHARGES_INCOME);
             lines.add(JournalEntryLine.credit(feesIncome, fee, "Loan application fee - " + loan.getLoanAccountNumber()));
@@ -294,15 +293,15 @@ public class LoanService {
 
     /** Stand-alone loan repayment (not part of a combined deposit screen entry): also posts the GL entry. */
     @Transactional
-    public LoanTransaction repayWithPosting(LoanAccount loan, BigDecimal amount, LocalDate date, String narration, String createdBy) {
+    public LoanTransaction repayWithPosting(LoanAccount loan, BigDecimal amount, LocalDate date, String narration,
+                                             String createdBy, GLAccount cashAccount) {
         LoanTransaction txn = recordRepayment(loan, amount, date, narration, createdBy);
 
-        GLAccount cash = accountingService.getAccountByCode(GLCodes.CASH_AND_BANK);
         GLAccount loansReceivable = accountingService.getAccountByCode(GLCodes.LOANS_RECEIVABLE);
         GLAccount interestIncome = accountingService.getAccountByCode(GLCodes.LOAN_INTEREST_INCOME);
 
         List<JournalEntryLine> lines = new ArrayList<>();
-        lines.add(JournalEntryLine.debit(cash, txn.getAmount(), "Cash received"));
+        lines.add(JournalEntryLine.debit(cashAccount, txn.getAmount(), "Cash received"));
         if (txn.getPrincipalPortion().compareTo(BigDecimal.ZERO) > 0) {
             lines.add(JournalEntryLine.credit(loansReceivable, txn.getPrincipalPortion(), "Principal repayment " + loan.getLoanAccountNumber()));
         }

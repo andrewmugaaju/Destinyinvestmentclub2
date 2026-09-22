@@ -114,17 +114,16 @@ public class SavingsService {
     /** Stand-alone savings deposit (not part of a combined deposit screen entry): also posts the GL entry. */
     @Transactional
     public SavingsTransaction depositWithPosting(SavingsAccount account, BigDecimal amount, LocalDate date,
-                                                  String narration, String createdBy) {
+                                                  String narration, String createdBy, GLAccount cashAccount) {
         SavingsTransaction txn = recordDeposit(account, amount, date, narration, createdBy);
 
-        GLAccount cash = accountingService.getAccountByCode(GLCodes.CASH_AND_BANK);
         GLAccount savingsControl = accountingService.getAccountByCode(GLCodes.MEMBER_SAVINGS);
 
         var entry = accountingService.post(txn.getTransactionDate(), "SAVINGS_DEPOSIT", txn.getId(),
                 "Savings deposit - " + account.getAccountNumber() + (narration != null ? " - " + narration : ""),
                 createdBy,
                 List.of(
-                        JournalEntryLine.debit(cash, amount, "Cash received"),
+                        JournalEntryLine.debit(cashAccount, amount, "Cash received"),
                         JournalEntryLine.credit(savingsControl, amount, "Deposit to " + account.getAccountNumber())
                 ));
         txn.setJournalEntryId(entry.getId());
@@ -133,7 +132,7 @@ public class SavingsService {
 
     @Transactional
     public SavingsTransaction withdraw(SavingsAccount account, BigDecimal amount, LocalDate date,
-                                        String narration, String createdBy) {
+                                        String narration, String createdBy, GLAccount cashAccount) {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new BusinessException("Withdrawal amount must be greater than zero");
         }
@@ -153,7 +152,6 @@ public class SavingsService {
         txn.setCreatedBy(createdBy);
         savingsTransactionRepository.save(txn);
 
-        GLAccount cash = accountingService.getAccountByCode(GLCodes.CASH_AND_BANK);
         GLAccount savingsControl = accountingService.getAccountByCode(GLCodes.MEMBER_SAVINGS);
 
         var entry = accountingService.post(txn.getTransactionDate(), "SAVINGS_WITHDRAWAL", txn.getId(),
@@ -161,7 +159,7 @@ public class SavingsService {
                 createdBy,
                 List.of(
                         JournalEntryLine.debit(savingsControl, amount, "Withdrawal from " + account.getAccountNumber()),
-                        JournalEntryLine.credit(cash, amount, "Cash paid out")
+                        JournalEntryLine.credit(cashAccount, amount, "Cash paid out")
                 ));
         txn.setJournalEntryId(entry.getId());
         return savingsTransactionRepository.save(txn);

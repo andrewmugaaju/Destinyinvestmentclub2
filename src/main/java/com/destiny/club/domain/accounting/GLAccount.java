@@ -30,6 +30,14 @@ public class GLAccount {
     @Column(nullable = false)
     private boolean systemAccount = false;
 
+    /**
+     * Marks this account as an actual payment channel (a till, bank account, mobile money
+     * paybill, etc.) that a teller can pick as the "receiving" or "paying" account on a
+     * transaction screen, instead of every transaction silently using one hardcoded account.
+     */
+    @Column(nullable = false)
+    private boolean cashAccount = false;
+
     @Column(nullable = false)
     private boolean active = true;
 

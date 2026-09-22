@@ -38,4 +38,25 @@ public class GLAccountController {
         redirectAttributes.addFlashAttribute("successMessage", "GL account created");
         return "redirect:/gl-accounts";
     }
+
+    @GetMapping("/{id}/edit")
+    public String editForm(@PathVariable Long id, Model model) {
+        model.addAttribute("account", glAccountRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("GL account not found: " + id)));
+        return "gl-accounts/edit";
+    }
+
+    @PostMapping("/{id}")
+    public String update(@PathVariable Long id,
+                          @RequestParam(required = false) Boolean cashAccount,
+                          @RequestParam(required = false) Boolean active,
+                          RedirectAttributes redirectAttributes) {
+        GLAccount account = glAccountRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("GL account not found: " + id));
+        account.setCashAccount(Boolean.TRUE.equals(cashAccount));
+        account.setActive(Boolean.TRUE.equals(active));
+        glAccountRepository.save(account);
+        redirectAttributes.addFlashAttribute("successMessage", "GL account updated");
+        return "redirect:/gl-accounts";
+    }
 }

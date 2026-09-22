@@ -70,6 +70,10 @@ public class DepositService {
         if (form.getClientId() == null && form.getGroupId() == null) {
             throw new BusinessException("A client or a group must be selected for this deposit");
         }
+        if (form.getCashAccountId() == null) {
+            throw new BusinessException("A receiving (cash/bank) account must be selected for this deposit");
+        }
+        GLAccount cashAccount = accountingService.getCashAccountById(form.getCashAccountId());
 
         BigDecimal splitTotal = form.getAllocations().stream()
                 .map(a -> a.getAmount() != null ? a.getAmount() : BigDecimal.ZERO)
@@ -147,8 +151,7 @@ public class DepositService {
         }
 
         List<JournalEntryLine> lines = new ArrayList<>();
-        GLAccount cash = accountingService.getAccountByCode(GLCodes.CASH_AND_BANK);
-        lines.add(JournalEntryLine.debit(cash, form.getTotalAmount(), "Cash received - " + deposit.getReference()));
+        lines.add(JournalEntryLine.debit(cashAccount, form.getTotalAmount(), "Cash received - " + deposit.getReference()));
 
         if (savingsTotal.compareTo(BigDecimal.ZERO) > 0) {
             GLAccount savingsControl = accountingService.getAccountByCode(GLCodes.MEMBER_SAVINGS);

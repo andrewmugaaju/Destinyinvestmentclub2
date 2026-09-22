@@ -21,6 +21,10 @@
                     <option th:each="t : ${T(com.destiny.club.domain.accounting.AccountType).values()}" th:value="${t}" th:text="${t}"></option>
                 </select>
             </div>
+            <div class="form-check mb-3">
+                <input type="checkbox" class="form-check-input" th:field="*{cashAccount}"/>
+                <label class="form-check-label">Payment channel (tellers can select this as the receiving/paying account when recording deposits, withdrawals, disbursements and repayments)</label>
+            </div>
             <div class="mb-3">
                 <label class="form-label">Description</label>
                 <textarea class="form-control" th:field="*{description}"></textarea>

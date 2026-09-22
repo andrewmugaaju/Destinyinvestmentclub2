@@ -8,6 +8,7 @@ import com.destiny.club.dto.DepositAllocationForm;
 import com.destiny.club.dto.DepositAllocationView;
 import com.destiny.club.dto.DepositForm;
 import com.destiny.club.security.CustomUserDetails;
+import com.destiny.club.service.AccountingService;
 import com.destiny.club.service.ClientService;
 import com.destiny.club.service.DepositService;
 import com.destiny.club.service.GroupService;
@@ -36,6 +37,7 @@ public class DepositController {
     private final GroupService groupService;
     private final SavingsService savingsService;
     private final LoanService loanService;
+    private final AccountingService accountingService;
 
     @GetMapping
     public String list(Model model) {
@@ -51,6 +53,7 @@ public class DepositController {
         model.addAttribute("groups", groupService.findAll());
         model.addAttribute("selectedClientId", clientId);
         model.addAttribute("selectedGroupId", groupId);
+        model.addAttribute("cashAccounts", accountingService.findCashAccounts());
 
         if (clientId != null) {
             model.addAttribute("savingsAccounts", filterActive(savingsService.findByClient(clientId)));
@@ -72,6 +75,7 @@ public class DepositController {
     @PostMapping
     public String save(@RequestParam(required = false) Long clientId,
                         @RequestParam(required = false) Long groupId,
+                        @RequestParam Long cashAccountId,
                         @RequestParam LocalDate transactionDate,
                         @RequestParam BigDecimal totalAmount,
                         @RequestParam(required = false) String narration,
@@ -84,6 +88,7 @@ public class DepositController {
         DepositForm form = new DepositForm();
         form.setClientId(clientId);
         form.setGroupId(groupId);
+        form.setCashAccountId(cashAccountId);
         form.setTransactionDate(transactionDate);
         form.setTotalAmount(totalAmount);
         form.setNarration(narration);

@@ -25,6 +25,7 @@ public class LoanAccountController {
     private final LoanProductService loanProductService;
     private final ClientService clientService;
     private final GroupService groupService;
+    private final AccountingService accountingService;
 
     @GetMapping
     public String list(Model model) {
@@ -65,6 +66,7 @@ public class LoanAccountController {
         LoanAccount loan = loanService.getById(id);
         model.addAttribute("loan", loan);
         model.addAttribute("transactions", loanService.transactionsFor(id));
+        model.addAttribute("cashAccounts", accountingService.findCashAccounts());
         return "loan-accounts/view";
     }
 
@@ -88,9 +90,11 @@ public class LoanAccountController {
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     public String disburse(@PathVariable Long id,
                             @RequestParam(required = false) LocalDate disbursementDate,
+                            @RequestParam Long cashAccountId,
                             @AuthenticationPrincipal CustomUserDetails principal,
                             RedirectAttributes redirectAttributes) {
-        loanService.disburse(id, disbursementDate, principal.getUsername());
+        var cashAccount = accountingService.getCashAccountById(cashAccountId);
+        loanService.disburse(id, disbursementDate, principal.getUsername(), cashAccount);
         redirectAttributes.addFlashAttribute("successMessage", "Loan disbursed and repayment schedule generated");
         return "redirect:/loan-accounts/" + id;
     }
@@ -98,12 +102,14 @@ public class LoanAccountController {
     @PostMapping("/{id}/repay")
     public String repay(@PathVariable Long id,
                          @RequestParam BigDecimal amount,
+                         @RequestParam Long cashAccountId,
                          @RequestParam(required = false) LocalDate transactionDate,
                          @RequestParam(required = false) String narration,
                          @AuthenticationPrincipal CustomUserDetails principal,
                          RedirectAttributes redirectAttributes) {
         LoanAccount loan = loanService.getById(id);
-        loanService.repayWithPosting(loan, amount, transactionDate, narration, principal.getUsername());
+        var cashAccount = accountingService.getCashAccountById(cashAccountId);
+        loanService.repayWithPosting(loan, amount, transactionDate, narration, principal.getUsername(), cashAccount);
         redirectAttributes.addFlashAttribute("successMessage", "Repayment recorded");
         return "redirect:/loan-accounts/" + id;
     }

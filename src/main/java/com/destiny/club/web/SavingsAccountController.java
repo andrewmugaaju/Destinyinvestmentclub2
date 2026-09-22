@@ -29,6 +29,7 @@ public class SavingsAccountController {
     private final SavingsProductService savingsProductService;
     private final ClientService clientService;
     private final GroupService groupService;
+    private final AccountingService accountingService;
 
     @GetMapping
     public String list(Model model) {
@@ -50,6 +51,7 @@ public class SavingsAccountController {
         model.addAttribute("selectedClientId", clientId);
         model.addAttribute("selectedGroupId", groupId);
         model.addAttribute("products", savingsProductService.findActive());
+        model.addAttribute("cashAccounts", accountingService.findCashAccounts());
 
         if (clientId != null || groupId != null) {
             List<SavingsAccount> existing = clientId != null
@@ -67,6 +69,7 @@ public class SavingsAccountController {
     public String deposit(@RequestParam(required = false) Long clientId,
                            @RequestParam(required = false) Long groupId,
                            @RequestParam Long productId,
+                           @RequestParam Long cashAccountId,
                            @RequestParam BigDecimal amount,
                            @RequestParam(required = false) LocalDate transactionDate,
                            @RequestParam(required = false) String narration,
@@ -75,9 +78,10 @@ public class SavingsAccountController {
         Client client = clientId != null ? clientService.getById(clientId) : null;
         Group group = groupId != null ? groupService.getById(groupId) : null;
         SavingsProduct product = savingsProductService.getById(productId);
+        var cashAccount = accountingService.getCashAccountById(cashAccountId);
 
         SavingsAccount account = savingsService.findOrOpenAccount(client, group, product);
-        savingsService.depositWithPosting(account, amount, transactionDate, narration, principal.getUsername());
+        savingsService.depositWithPosting(account, amount, transactionDate, narration, principal.getUsername(), cashAccount);
         redirectAttributes.addFlashAttribute("successMessage", "Deposit recorded to " + account.getAccountNumber());
         return "redirect:/savings-accounts/" + account.getId();
     }
@@ -87,18 +91,21 @@ public class SavingsAccountController {
         SavingsAccount account = savingsService.getById(id);
         model.addAttribute("account", account);
         model.addAttribute("transactions", savingsService.transactionsFor(id));
+        model.addAttribute("cashAccounts", accountingService.findCashAccounts());
         return "savings-accounts/view";
     }
 
     @PostMapping("/{id}/withdraw")
     public String withdraw(@PathVariable Long id,
                             @RequestParam BigDecimal amount,
+                            @RequestParam Long cashAccountId,
                             @RequestParam(required = false) LocalDate transactionDate,
                             @RequestParam(required = false) String narration,
                             @AuthenticationPrincipal CustomUserDetails principal,
                             RedirectAttributes redirectAttributes) {
         SavingsAccount account = savingsService.getById(id);
-        savingsService.withdraw(account, amount, transactionDate, narration, principal.getUsername());
+        var cashAccount = accountingService.getCashAccountById(cashAccountId);
+        savingsService.withdraw(account, amount, transactionDate, narration, principal.getUsername(), cashAccount);
         redirectAttributes.addFlashAttribute("successMessage", "Withdrawal recorded");
         return "redirect:/savings-accounts/" + id;
     }

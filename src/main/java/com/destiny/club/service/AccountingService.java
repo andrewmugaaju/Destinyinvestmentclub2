@@ -41,6 +41,22 @@ public class AccountingService {
         return glAccountRepository.findAllByOrderByCode();
     }
 
+    /** Active payment-channel accounts (tills, bank accounts, mobile money, ...) tellers can post cash to/from. */
+    public List<GLAccount> findCashAccounts() {
+        return glAccountRepository.findAllByOrderByCode().stream()
+                .filter(a -> a.isCashAccount() && a.isActive())
+                .toList();
+    }
+
+    public GLAccount getCashAccountById(Long id) {
+        GLAccount account = glAccountRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("GL account not found: " + id));
+        if (!account.isCashAccount()) {
+            throw new BusinessException(account.getName() + " is not configured as a payment channel account");
+        }
+        return account;
+    }
+
     /**
      * Posts a balanced journal entry. Throws {@link BusinessException} if the lines do not
      * balance, guaranteeing every posting keeps the ledger in double-entry balance.

@@ -11,14 +11,19 @@
     </div>
     <div class="card p-3">
         <table class="table table-hover">
-            <thead><tr><th>Code</th><th>Name</th><th>Type</th><th>System</th><th>Active</th></tr></thead>
+            <thead><tr><th>Code</th><th>Name</th><th>Type</th><th>System</th><th>Payment Channel</th><th>Active</th><th></th></tr></thead>
             <tbody>
             <tr th:each="a : ${accounts}">
                 <td th:text="${a.code}">1000</td>
                 <td th:text="${a.name}">Cash</td>
                 <td th:text="${a.accountType}">ASSET</td>
                 <td th:text="${a.systemAccount} ? 'Yes' : 'No'">No</td>
+                <td>
+                    <span th:if="${a.cashAccount}" class="badge bg-success">Yes</span>
+                    <span th:unless="${a.cashAccount}" class="text-muted">No</span>
+                </td>
                 <td th:text="${a.active} ? 'Yes' : 'No'">Yes</td>
+                <td><a class="btn btn-sm btn-outline-secondary" th:href="@{/gl-accounts/{id}/edit(id=${a.id})}">Edit</a></td>
             </tr>
             </tbody>
         </table>
