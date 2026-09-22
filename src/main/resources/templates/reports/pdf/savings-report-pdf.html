@@ -10,31 +10,32 @@
         <div class="brand-mark">DIC</div>
         <div class="club-name">Destiny Investment Club</div>
         <div class="report-title">Savings Report</div>
-        <div class="meta" th:text="${selectedStatus} != null ? ('Status: ' + ${selectedStatus}) : 'All savings accounts'">All savings accounts</div>
+        <div class="meta">Period: <strong th:text="${fromDate}">2026-01-01</strong> to <strong th:text="${toDate}">2026-01-31</strong></div>
     </div>
 
     <table>
         <thead>
-        <tr><th>Account #</th><th>Owner</th><th>Product</th><th>Opened</th><th>Status</th><th class="money">Balance</th></tr>
+        <tr><th>Date</th><th>Account #</th><th>Owner</th><th>Product</th><th>Type</th><th class="money">Amount</th><th class="money">Balance After</th></tr>
         </thead>
         <tbody>
-        <tr th:each="a : ${accounts}">
-            <td th:text="${a.accountNumber}">SB000001</td>
-            <td th:text="${a.ownerName}">-</td>
-            <td th:text="${a.savingsProduct.name}">-</td>
-            <td th:text="${a.openedDate}">-</td>
-            <td th:text="${a.status}">-</td>
-            <td class="money" th:text="${#numbers.formatDecimal(a.balance,1,'COMMA',2,'POINT')}">0.00</td>
+        <tr th:each="t : ${transactions}">
+            <td th:text="${t.transactionDate}">-</td>
+            <td th:text="${t.savingsAccount.accountNumber}">SB000001</td>
+            <td th:text="${t.savingsAccount.ownerName}">-</td>
+            <td th:text="${t.savingsAccount.savingsProduct.name}">-</td>
+            <td th:text="${t.transactionType}">-</td>
+            <td class="money" th:text="${#numbers.formatDecimal(t.amount,1,'COMMA',2,'POINT')}">0.00</td>
+            <td class="money" th:text="${#numbers.formatDecimal(t.runningBalance,1,'COMMA',2,'POINT')}">0.00</td>
         </tr>
-        <tr th:if="${#lists.isEmpty(accounts)}"><td colspan="6">No savings accounts found.</td></tr>
+        <tr th:if="${#lists.isEmpty(transactions)}"><td colspan="7">No savings transactions in this period.</td></tr>
         </tbody>
-        <tfoot>
-        <tr>
-            <td colspan="5">Total Balance</td>
-            <td class="money" th:text="${#numbers.formatDecimal(totalBalance,1,'COMMA',2,'POINT')}">0.00</td>
-        </tr>
-        </tfoot>
     </table>
+
+    <div class="summary-box">
+        Total Deposited: <span th:text="${#numbers.formatDecimal(totalDeposited,1,'COMMA',2,'POINT')}">0.00</span>
+        &nbsp;&nbsp;|&nbsp;&nbsp;
+        Total Withdrawn: <span th:text="${#numbers.formatDecimal(totalWithdrawn,1,'COMMA',2,'POINT')}">0.00</span>
+    </div>
 
     <div class="footer-note">
         Generated <span th:text="${generatedAt}">-</span> by <span th:text="${generatedBy}">-</span>

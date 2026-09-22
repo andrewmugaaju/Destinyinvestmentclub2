@@ -47,6 +47,11 @@ public class SavingsService {
         return savingsTransactionRepository.findBySavingsAccountIdOrderByTransactionDateDescIdDesc(savingsAccountId);
     }
 
+    /** All savings transactions (deposits and withdrawals, across every account) within a date range, oldest first. */
+    public List<SavingsTransaction> findTransactionsBetween(LocalDate fromDate, LocalDate toDate) {
+        return savingsTransactionRepository.findByTransactionDateBetweenOrderByTransactionDateAscIdAsc(fromDate, toDate);
+    }
+
     @Transactional
     public SavingsAccount openAccount(Client client, Group group, SavingsProduct product, LocalDate openedDate) {
         if (client == null && group == null) {

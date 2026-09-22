@@ -4,15 +4,23 @@
 <body>
 <div th:replace="~{fragments/sidebar :: sidebar}"></div>
 <main class="container">
-    <div th:replace="~{fragments/report-header :: header(title='Loans Report', subtitle=${selectedStatus} != null ? ('Status: ' + ${selectedStatus}) : 'All loans')}"></div>
+    <div th:replace="~{fragments/report-header :: header(title='Loans Report', subtitle=${fromDate} + ' to ' + ${toDate})}"></div>
 
     <div class="d-flex justify-content-between align-items-end flex-wrap gap-2 mb-3">
         <form method="get" th:action="@{/reports/loans}" class="row g-2 align-items-end">
             <div class="col-auto">
-                <label class="form-label">Status</label>
-                <select class="form-select" name="status">
-                    <option value="">-- All statuses --</option>
-                    <option th:each="s : ${statuses}" th:value="${s}" th:text="${s}" th:selected="${selectedStatus == s}"></option>
+                <label class="form-label">From</label>
+                <input type="date" class="form-control" name="fromDate" th:value="${fromDate}"/>
+            </div>
+            <div class="col-auto">
+                <label class="form-label">To</label>
+                <input type="date" class="form-control" name="toDate" th:value="${toDate}"/>
+            </div>
+            <div class="col-auto">
+                <label class="form-label">Type</label>
+                <select class="form-select" name="type">
+                    <option value="">-- All --</option>
+                    <option th:each="t : ${types}" th:value="${t}" th:text="${t}" th:selected="${selectedType == t}"></option>
                 </select>
             </div>
             <div class="col-auto">
@@ -20,42 +28,44 @@
             </div>
         </form>
         <a class="btn btn-outline-secondary" target="_blank"
-           th:href="@{/reports/loans/pdf(status=${selectedStatus})}">
+           th:href="@{/reports/loans/pdf(fromDate=${fromDate},toDate=${toDate},type=${selectedType})}">
             <i class="bi bi-file-earmark-pdf"></i> Export to PDF
         </a>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <div class="col-md-6">
+            <div class="card p-3">
+                <div class="text-muted small">Total Disbursed</div>
+                <div class="fs-5" th:text="${#numbers.formatDecimal(totalDisbursed,1,'COMMA',2,'POINT')}">0.00</div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card p-3">
+                <div class="text-muted small">Total Repaid</div>
+                <div class="fs-5" th:text="${#numbers.formatDecimal(totalRepaid,1,'COMMA',2,'POINT')}">0.00</div>
+            </div>
+        </div>
     </div>
 
     <div class="card p-3">
         <table class="table table-sm table-report">
             <thead>
-            <tr>
-                <th>Loan #</th><th>Borrower</th><th>Product</th><th class="money">Principal</th>
-                <th class="money">Rate</th><th>Term</th><th>Status</th><th>Disbursed</th>
-                <th class="money">Outstanding Principal</th><th class="money">Outstanding Interest</th><th class="money">Total Outstanding</th>
-            </tr>
+            <tr><th>Date</th><th>Loan #</th><th>Borrower</th><th>Product</th><th>Type</th><th class="money">Amount</th><th class="money">Principal</th><th class="money">Interest</th></tr>
             </thead>
             <tbody>
-            <tr th:each="l : ${loans}">
-                <td><a th:href="@{/loan-accounts/{id}(id=${l.id})}" th:text="${l.loanAccountNumber}">LN000001</a></td>
-                <td th:text="${l.borrowerName}">-</td>
-                <td th:text="${l.loanProduct.name}">-</td>
-                <td class="money" th:text="${#numbers.formatDecimal(l.principalAmount,1,'COMMA',2,'POINT')}">0.00</td>
-                <td class="money" th:text="${l.annualInterestRate} + '%'">0%</td>
-                <td th:text="${l.termMonths} + ' mo'">-</td>
-                <td><span class="badge bg-secondary" th:text="${l.status}">-</span></td>
-                <td th:text="${l.disbursementDate}">-</td>
-                <td class="money" th:text="${#numbers.formatDecimal(l.outstandingPrincipal,1,'COMMA',2,'POINT')}">0.00</td>
-                <td class="money" th:text="${#numbers.formatDecimal(l.outstandingInterest,1,'COMMA',2,'POINT')}">0.00</td>
-                <td class="money" th:text="${#numbers.formatDecimal(l.totalOutstanding,1,'COMMA',2,'POINT')}">0.00</td>
+            <tr th:each="t : ${transactions}">
+                <td th:text="${t.transactionDate}">-</td>
+                <td><a th:href="@{/loan-accounts/{id}(id=${t.loanAccount.id})}" th:text="${t.loanAccount.loanAccountNumber}">LN000001</a></td>
+                <td th:text="${t.loanAccount.borrowerName}">-</td>
+                <td th:text="${t.loanAccount.loanProduct.name}">-</td>
+                <td><span class="badge" th:classappend="${t.transactionType.name() == 'DISBURSEMENT'} ? 'bg-primary' : 'bg-success'" th:text="${t.transactionType}">-</span></td>
+                <td class="money" th:text="${#numbers.formatDecimal(t.amount,1,'COMMA',2,'POINT')}">0.00</td>
+                <td class="money" th:text="${#numbers.formatDecimal(t.principalPortion,1,'COMMA',2,'POINT')}">0.00</td>
+                <td class="money" th:text="${#numbers.formatDecimal(t.interestPortion,1,'COMMA',2,'POINT')}">0.00</td>
             </tr>
-            <tr th:if="${#lists.isEmpty(loans)}"><td colspan="11" class="text-muted">No loans found.</td></tr>
+            <tr th:if="${#lists.isEmpty(transactions)}"><td colspan="8" class="text-muted">No loan transactions in this period.</td></tr>
             </tbody>
-            <tfoot>
-            <tr class="fw-bold">
-                <td colspan="10">Total Outstanding</td>
-                <td class="money" th:text="${#numbers.formatDecimal(totalOutstanding,1,'COMMA',2,'POINT')}">0.00</td>
-            </tr>
-            </tfoot>
         </table>
     </div>
 </main>

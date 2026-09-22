@@ -4,50 +4,39 @@
     <meta charset="UTF-8"/>
     <title>Loans Report</title>
     <th:block th:replace="~{reports/pdf/fragments/pdf-style :: style}"></th:block>
-    <style>
-        @page { size: A4 landscape; margin: 2cm 1.5cm 2.2cm 1.5cm; }
-        table { font-size: 9.5px; }
-    </style>
 </head>
 <body>
     <div class="letterhead">
         <div class="brand-mark">DIC</div>
         <div class="club-name">Destiny Investment Club</div>
         <div class="report-title">Loans Report</div>
-        <div class="meta" th:text="${selectedStatus} != null ? ('Status: ' + ${selectedStatus}) : 'All loans'">All loans</div>
+        <div class="meta">Period: <strong th:text="${fromDate}">2026-01-01</strong> to <strong th:text="${toDate}">2026-01-31</strong></div>
     </div>
 
     <table>
         <thead>
-        <tr>
-            <th>Loan #</th><th>Borrower</th><th>Product</th><th class="money">Principal</th>
-            <th class="money">Rate</th><th>Term</th><th>Status</th><th>Disbursed</th>
-            <th class="money">Outst. Principal</th><th class="money">Outst. Interest</th><th class="money">Total Outst.</th>
-        </tr>
+        <tr><th>Date</th><th>Loan #</th><th>Borrower</th><th>Product</th><th>Type</th><th class="money">Amount</th><th class="money">Principal</th><th class="money">Interest</th></tr>
         </thead>
         <tbody>
-        <tr th:each="l : ${loans}">
-            <td th:text="${l.loanAccountNumber}">LN000001</td>
-            <td th:text="${l.borrowerName}">-</td>
-            <td th:text="${l.loanProduct.name}">-</td>
-            <td class="money" th:text="${#numbers.formatDecimal(l.principalAmount,1,'COMMA',2,'POINT')}">0.00</td>
-            <td class="money" th:text="${l.annualInterestRate} + '%'">0%</td>
-            <td th:text="${l.termMonths} + ' mo'">-</td>
-            <td th:text="${l.status}">-</td>
-            <td th:text="${l.disbursementDate}">-</td>
-            <td class="money" th:text="${#numbers.formatDecimal(l.outstandingPrincipal,1,'COMMA',2,'POINT')}">0.00</td>
-            <td class="money" th:text="${#numbers.formatDecimal(l.outstandingInterest,1,'COMMA',2,'POINT')}">0.00</td>
-            <td class="money" th:text="${#numbers.formatDecimal(l.totalOutstanding,1,'COMMA',2,'POINT')}">0.00</td>
+        <tr th:each="t : ${transactions}">
+            <td th:text="${t.transactionDate}">-</td>
+            <td th:text="${t.loanAccount.loanAccountNumber}">LN000001</td>
+            <td th:text="${t.loanAccount.borrowerName}">-</td>
+            <td th:text="${t.loanAccount.loanProduct.name}">-</td>
+            <td th:text="${t.transactionType}">-</td>
+            <td class="money" th:text="${#numbers.formatDecimal(t.amount,1,'COMMA',2,'POINT')}">0.00</td>
+            <td class="money" th:text="${#numbers.formatDecimal(t.principalPortion,1,'COMMA',2,'POINT')}">0.00</td>
+            <td class="money" th:text="${#numbers.formatDecimal(t.interestPortion,1,'COMMA',2,'POINT')}">0.00</td>
         </tr>
-        <tr th:if="${#lists.isEmpty(loans)}"><td colspan="11">No loans found.</td></tr>
+        <tr th:if="${#lists.isEmpty(transactions)}"><td colspan="8">No loan transactions in this period.</td></tr>
         </tbody>
-        <tfoot>
-        <tr>
-            <td colspan="10">Total Outstanding</td>
-            <td class="money" th:text="${#numbers.formatDecimal(totalOutstanding,1,'COMMA',2,'POINT')}">0.00</td>
-        </tr>
-        </tfoot>
     </table>
+
+    <div class="summary-box">
+        Total Disbursed: <span th:text="${#numbers.formatDecimal(totalDisbursed,1,'COMMA',2,'POINT')}">0.00</span>
+        &nbsp;&nbsp;|&nbsp;&nbsp;
+        Total Repaid: <span th:text="${#numbers.formatDecimal(totalRepaid,1,'COMMA',2,'POINT')}">0.00</span>
+    </div>
 
     <div class="footer-note">
         Generated <span th:text="${generatedAt}">-</span> by <span th:text="${generatedBy}">-</span>

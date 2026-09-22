@@ -64,6 +64,11 @@ public class LoanService {
         return loanTransactionRepository.findByLoanAccountIdOrderByTransactionDateDescIdDesc(loanAccountId);
     }
 
+    /** All loan transactions (disbursements and repayments, across every loan) within a date range, oldest first. */
+    public List<LoanTransaction> findTransactionsBetween(LocalDate fromDate, LocalDate toDate) {
+        return loanTransactionRepository.findByTransactionDateBetweenOrderByTransactionDateAscIdAsc(fromDate, toDate);
+    }
+
     @Transactional
     public LoanAccount apply(Client client, Group group, LoanProduct product, BigDecimal principal, Integer termMonths,
                               BigDecimal applicationFeeAmount) {

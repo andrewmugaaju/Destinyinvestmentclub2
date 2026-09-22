@@ -1,9 +1,9 @@
 package com.destiny.club.web;
 
-import com.destiny.club.domain.loan.LoanAccount;
-import com.destiny.club.domain.loan.LoanStatus;
-import com.destiny.club.domain.savings.SavingsAccount;
-import com.destiny.club.domain.savings.SavingsAccountStatus;
+import com.destiny.club.domain.loan.LoanTransaction;
+import com.destiny.club.domain.loan.LoanTransactionType;
+import com.destiny.club.domain.savings.SavingsTransaction;
+import com.destiny.club.domain.savings.SavingsTransactionType;
 import com.destiny.club.security.CustomUserDetails;
 import com.destiny.club.service.AccountingService;
 import com.destiny.club.service.ClientService;
@@ -181,59 +181,99 @@ public class ReportController {
     }
 
     @GetMapping("/loans")
-    public String loans(@RequestParam(required = false) LoanStatus status, Model model) {
-        List<LoanAccount> loans = filterLoans(status);
-        model.addAttribute("loans", loans);
-        model.addAttribute("selectedStatus", status);
-        model.addAttribute("statuses", LoanStatus.values());
-        model.addAttribute("totalOutstanding", loans.stream().map(LoanAccount::getTotalOutstanding).reduce(BigDecimal.ZERO, BigDecimal::add));
+    public String loans(@RequestParam(required = false) LocalDate fromDate,
+                         @RequestParam(required = false) LocalDate toDate,
+                         @RequestParam(required = false) LoanTransactionType type,
+                         Model model) {
+        LocalDate to = toDate != null ? toDate : LocalDate.now();
+        LocalDate from = fromDate != null ? fromDate : to.with(TemporalAdjusters.firstDayOfMonth());
+        List<LoanTransaction> transactions = filterLoanTransactions(from, to, type);
+        model.addAttribute("transactions", transactions);
+        model.addAttribute("fromDate", from);
+        model.addAttribute("toDate", to);
+        model.addAttribute("selectedType", type);
+        model.addAttribute("types", LoanTransactionType.values());
+        model.addAttribute("totalDisbursed", sumLoanTxns(transactions, LoanTransactionType.DISBURSEMENT));
+        model.addAttribute("totalRepaid", sumLoanTxns(transactions, LoanTransactionType.REPAYMENT));
         return "reports/loans-report";
     }
 
     @GetMapping(value = "/loans/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
-    public ResponseEntity<byte[]> loansPdf(@RequestParam(required = false) LoanStatus status,
+    public ResponseEntity<byte[]> loansPdf(@RequestParam(required = false) LocalDate fromDate,
+                                            @RequestParam(required = false) LocalDate toDate,
+                                            @RequestParam(required = false) LoanTransactionType type,
                                             @AuthenticationPrincipal CustomUserDetails principal) {
-        List<LoanAccount> loans = filterLoans(status);
+        LocalDate to = toDate != null ? toDate : LocalDate.now();
+        LocalDate from = fromDate != null ? fromDate : to.with(TemporalAdjusters.firstDayOfMonth());
+        List<LoanTransaction> transactions = filterLoanTransactions(from, to, type);
         Map<String, Object> model = new HashMap<>();
-        model.put("loans", loans);
-        model.put("selectedStatus", status);
-        model.put("totalOutstanding", loans.stream().map(LoanAccount::getTotalOutstanding).reduce(BigDecimal.ZERO, BigDecimal::add));
+        model.put("transactions", transactions);
+        model.put("fromDate", from);
+        model.put("toDate", to);
+        model.put("selectedType", type);
+        model.put("totalDisbursed", sumLoanTxns(transactions, LoanTransactionType.DISBURSEMENT));
+        model.put("totalRepaid", sumLoanTxns(transactions, LoanTransactionType.REPAYMENT));
         addGenerationMeta(model, principal);
         byte[] pdf = pdfExportService.renderPdf("reports/pdf/loans-report-pdf", model);
-        return pdfResponse(pdf, "loans-report.pdf");
+        return pdfResponse(pdf, "loans-report-" + from + "-to-" + to + ".pdf");
     }
 
-    private List<LoanAccount> filterLoans(LoanStatus status) {
-        return status != null ? loanService.findAll().stream().filter(l -> l.getStatus() == status).toList()
-                : loanService.findAll();
+    private List<LoanTransaction> filterLoanTransactions(LocalDate from, LocalDate to, LoanTransactionType type) {
+        List<LoanTransaction> transactions = loanService.findTransactionsBetween(from, to);
+        return type != null ? transactions.stream().filter(t -> t.getTransactionType() == type).toList() : transactions;
+    }
+
+    private BigDecimal sumLoanTxns(List<LoanTransaction> transactions, LoanTransactionType type) {
+        return transactions.stream().filter(t -> t.getTransactionType() == type)
+                .map(LoanTransaction::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     @GetMapping("/savings")
-    public String savings(@RequestParam(required = false) SavingsAccountStatus status, Model model) {
-        List<SavingsAccount> accounts = filterSavings(status);
-        model.addAttribute("accounts", accounts);
-        model.addAttribute("selectedStatus", status);
-        model.addAttribute("statuses", SavingsAccountStatus.values());
-        model.addAttribute("totalBalance", accounts.stream().map(SavingsAccount::getBalance).reduce(BigDecimal.ZERO, BigDecimal::add));
+    public String savings(@RequestParam(required = false) LocalDate fromDate,
+                           @RequestParam(required = false) LocalDate toDate,
+                           @RequestParam(required = false) SavingsTransactionType type,
+                           Model model) {
+        LocalDate to = toDate != null ? toDate : LocalDate.now();
+        LocalDate from = fromDate != null ? fromDate : to.with(TemporalAdjusters.firstDayOfMonth());
+        List<SavingsTransaction> transactions = filterSavingsTransactions(from, to, type);
+        model.addAttribute("transactions", transactions);
+        model.addAttribute("fromDate", from);
+        model.addAttribute("toDate", to);
+        model.addAttribute("selectedType", type);
+        model.addAttribute("types", SavingsTransactionType.values());
+        model.addAttribute("totalDeposited", sumSavingsTxns(transactions, SavingsTransactionType.DEPOSIT));
+        model.addAttribute("totalWithdrawn", sumSavingsTxns(transactions, SavingsTransactionType.WITHDRAWAL));
         return "reports/savings-report";
     }
 
     @GetMapping(value = "/savings/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
-    public ResponseEntity<byte[]> savingsPdf(@RequestParam(required = false) SavingsAccountStatus status,
+    public ResponseEntity<byte[]> savingsPdf(@RequestParam(required = false) LocalDate fromDate,
+                                              @RequestParam(required = false) LocalDate toDate,
+                                              @RequestParam(required = false) SavingsTransactionType type,
                                               @AuthenticationPrincipal CustomUserDetails principal) {
-        List<SavingsAccount> accounts = filterSavings(status);
+        LocalDate to = toDate != null ? toDate : LocalDate.now();
+        LocalDate from = fromDate != null ? fromDate : to.with(TemporalAdjusters.firstDayOfMonth());
+        List<SavingsTransaction> transactions = filterSavingsTransactions(from, to, type);
         Map<String, Object> model = new HashMap<>();
-        model.put("accounts", accounts);
-        model.put("selectedStatus", status);
-        model.put("totalBalance", accounts.stream().map(SavingsAccount::getBalance).reduce(BigDecimal.ZERO, BigDecimal::add));
+        model.put("transactions", transactions);
+        model.put("fromDate", from);
+        model.put("toDate", to);
+        model.put("selectedType", type);
+        model.put("totalDeposited", sumSavingsTxns(transactions, SavingsTransactionType.DEPOSIT));
+        model.put("totalWithdrawn", sumSavingsTxns(transactions, SavingsTransactionType.WITHDRAWAL));
         addGenerationMeta(model, principal);
         byte[] pdf = pdfExportService.renderPdf("reports/pdf/savings-report-pdf", model);
-        return pdfResponse(pdf, "savings-report.pdf");
+        return pdfResponse(pdf, "savings-report-" + from + "-to-" + to + ".pdf");
     }
 
-    private List<SavingsAccount> filterSavings(SavingsAccountStatus status) {
-        return status != null ? savingsService.findAll().stream().filter(a -> a.getStatus() == status).toList()
-                : savingsService.findAll();
+    private List<SavingsTransaction> filterSavingsTransactions(LocalDate from, LocalDate to, SavingsTransactionType type) {
+        List<SavingsTransaction> transactions = savingsService.findTransactionsBetween(from, to);
+        return type != null ? transactions.stream().filter(t -> t.getTransactionType() == type).toList() : transactions;
+    }
+
+    private BigDecimal sumSavingsTxns(List<SavingsTransaction> transactions, SavingsTransactionType type) {
+        return transactions.stream().filter(t -> t.getTransactionType() == type)
+                .map(SavingsTransaction::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     private void addGenerationMeta(Map<String, Object> model, CustomUserDetails principal) {
