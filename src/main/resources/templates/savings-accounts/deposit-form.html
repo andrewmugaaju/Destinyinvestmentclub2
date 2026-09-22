@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Savings Deposit')}"></head>
+<body>
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+<main class="container">
+    <div th:replace="~{fragments/alerts :: alerts}"></div>
+    <h2>Savings Deposit</h2>
+    <p class="text-muted">Deposit money into a member's or group's savings account.</p>
+
+    <div class="card p-4 mb-3">
+        <h5>Step 1: Select Member or Group</h5>
+        <form method="get" th:action="@{/savings-accounts/deposit}" class="row g-2 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label">Client</label>
+                <select class="form-select" name="clientId">
+                    <option value="">-- none --</option>
+                    <option th:each="c : ${clients}" th:value="${c.id}"
+                            th:selected="${selectedClientId != null and selectedClientId == c.id}"
+                            th:text="${c.fullName} + ' (' + ${c.clientNumber} + ')'"></option>
+                </select>
+            </div>
+            <div class="col-md-5">
+                <label class="form-label">Or Group</label>
+                <select class="form-select" name="groupId">
+                    <option value="">-- none --</option>
+                    <option th:each="g : ${groups}" th:value="${g.id}"
+                            th:selected="${selectedGroupId != null and selectedGroupId == g.id}"
+                            th:text="${g.groupName}"></option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-outline-primary w-100">Load Accounts</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="card p-4" th:if="${selectedClientId != null or selectedGroupId != null}">
+        <h5>Step 2: Deposit Details</h5>
+
+        <div class="alert alert-warning" th:if="${#lists.isEmpty(savingsAccounts)}">
+            This member/group has no active savings account. <a th:href="@{/savings-accounts/new(clientId=${selectedClientId},groupId=${selectedGroupId})}">Open one first</a>.
+        </div>
+
+        <form th:if="${!#lists.isEmpty(savingsAccounts)}" th:action="@{/savings-accounts/deposit}" method="post">
+            <div class="mb-3">
+                <label class="form-label">Savings Account &amp; Product</label>
+                <select class="form-select" name="savingsAccountId" required>
+                    <option th:each="s : ${savingsAccounts}" th:value="${s.id}"
+                            th:text="${s.accountNumber} + ' - ' + ${s.ownerName} + ' - ' + ${s.savingsProduct.name} + ' (bal ' + ${#numbers.formatDecimal(s.balance,1,'COMMA',2,'POINT')} + ')'"></option>
+                </select>
+            </div>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Amount</label>
+                    <input type="number" step="0.01" min="0.01" class="form-control" name="amount" required/>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Transaction Date</label>
+                    <input type="date" class="form-control" name="transactionDate" th:value="${T(java.time.LocalDate).now()}"/>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Narration (optional)</label>
+                    <input type="text" class="form-control" name="narration"/>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary mt-3">Save Deposit</button>
+        </form>
+    </div>
+</main>
+</body>
+</html>

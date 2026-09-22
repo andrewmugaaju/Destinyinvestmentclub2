@@ -3,6 +3,7 @@ package com.destiny.club.web;
 import com.destiny.club.domain.client.Client;
 import com.destiny.club.domain.client.Group;
 import com.destiny.club.domain.savings.SavingsAccount;
+import com.destiny.club.domain.savings.SavingsAccountStatus;
 import com.destiny.club.security.CustomUserDetails;
 import com.destiny.club.service.*;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Collections;
+import java.util.List;
 
 @Controller
 @RequiredArgsConstructor
@@ -54,6 +57,42 @@ public class SavingsAccountController {
         var product = savingsProductService.getById(productId);
         SavingsAccount account = savingsService.openAccount(client, group, product, openedDate);
         redirectAttributes.addFlashAttribute("successMessage", "Savings account " + account.getAccountNumber() + " opened");
+        return "redirect:/savings-accounts/" + account.getId();
+    }
+
+    @GetMapping("/deposit")
+    public String depositForm(@RequestParam(required = false) Long clientId,
+                               @RequestParam(required = false) Long groupId,
+                               Model model) {
+        model.addAttribute("clients", clientService.findAll());
+        model.addAttribute("groups", groupService.findAll());
+        model.addAttribute("selectedClientId", clientId);
+        model.addAttribute("selectedGroupId", groupId);
+
+        List<SavingsAccount> accounts;
+        if (clientId != null) {
+            accounts = savingsService.findByClient(clientId);
+        } else if (groupId != null) {
+            accounts = savingsService.findByGroup(groupId);
+        } else {
+            accounts = Collections.emptyList();
+        }
+        model.addAttribute("savingsAccounts", accounts.stream()
+                .filter(a -> a.getStatus() == SavingsAccountStatus.ACTIVE)
+                .toList());
+        return "savings-accounts/deposit-form";
+    }
+
+    @PostMapping("/deposit")
+    public String deposit(@RequestParam Long savingsAccountId,
+                           @RequestParam BigDecimal amount,
+                           @RequestParam(required = false) LocalDate transactionDate,
+                           @RequestParam(required = false) String narration,
+                           @AuthenticationPrincipal CustomUserDetails principal,
+                           RedirectAttributes redirectAttributes) {
+        SavingsAccount account = savingsService.getById(savingsAccountId);
+        savingsService.depositWithPosting(account, amount, transactionDate, narration, principal.getUsername());
+        redirectAttributes.addFlashAttribute("successMessage", "Deposit recorded to " + account.getAccountNumber());
         return "redirect:/savings-accounts/" + account.getId();
     }
 
