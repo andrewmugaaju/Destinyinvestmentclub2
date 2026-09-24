@@ -47,7 +47,8 @@ public class SecurityConfig {
                         .requestMatchers("/login", "/css/**", "/js/**", "/webjars/**", "/error").permitAll()
                         .requestMatchers("/users/**").hasRole("ADMIN")
                         .requestMatchers("/reports/member-statement/**", "/reports/member-statement",
-                                "/reports/loans/**", "/reports/loans", "/reports/savings/**", "/reports/savings").authenticated()
+                                "/reports/loans/**", "/reports/loans", "/reports/savings/**", "/reports/savings",
+                                "/reports/savings-withdrawals/**", "/reports/savings-withdrawals").authenticated()
                         .requestMatchers("/reports/**").hasAnyRole("ADMIN", "MANAGER", "ACCOUNTANT")
                         .requestMatchers("/journal/**").hasAnyRole("ADMIN", "ACCOUNTANT")
                         .requestMatchers("/gl-accounts/**").hasAnyRole("ADMIN", "ACCOUNTANT")

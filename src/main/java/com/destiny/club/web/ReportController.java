@@ -266,6 +266,38 @@ public class ReportController {
         return pdfResponse(pdf, "savings-report-" + from + "-to-" + to + ".pdf");
     }
 
+    /** A dedicated, always-withdrawals-only view of the savings ledger, for cash-outflow audit/reporting. */
+    @GetMapping("/savings-withdrawals")
+    public String savingsWithdrawals(@RequestParam(required = false) LocalDate fromDate,
+                                      @RequestParam(required = false) LocalDate toDate,
+                                      Model model) {
+        LocalDate to = toDate != null ? toDate : LocalDate.now();
+        LocalDate from = fromDate != null ? fromDate : to.with(TemporalAdjusters.firstDayOfMonth());
+        List<SavingsTransaction> transactions = filterSavingsTransactions(from, to, SavingsTransactionType.WITHDRAWAL);
+        model.addAttribute("transactions", transactions);
+        model.addAttribute("fromDate", from);
+        model.addAttribute("toDate", to);
+        model.addAttribute("totalWithdrawn", sumSavingsTxns(transactions, SavingsTransactionType.WITHDRAWAL));
+        return "reports/savings-withdrawals-report";
+    }
+
+    @GetMapping(value = "/savings-withdrawals/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> savingsWithdrawalsPdf(@RequestParam(required = false) LocalDate fromDate,
+                                                          @RequestParam(required = false) LocalDate toDate,
+                                                          @AuthenticationPrincipal CustomUserDetails principal) {
+        LocalDate to = toDate != null ? toDate : LocalDate.now();
+        LocalDate from = fromDate != null ? fromDate : to.with(TemporalAdjusters.firstDayOfMonth());
+        List<SavingsTransaction> transactions = filterSavingsTransactions(from, to, SavingsTransactionType.WITHDRAWAL);
+        Map<String, Object> model = new HashMap<>();
+        model.put("transactions", transactions);
+        model.put("fromDate", from);
+        model.put("toDate", to);
+        model.put("totalWithdrawn", sumSavingsTxns(transactions, SavingsTransactionType.WITHDRAWAL));
+        addGenerationMeta(model, principal);
+        byte[] pdf = pdfExportService.renderPdf("reports/pdf/savings-withdrawals-report-pdf", model);
+        return pdfResponse(pdf, "savings-withdrawals-report-" + from + "-to-" + to + ".pdf");
+    }
+
     private List<SavingsTransaction> filterSavingsTransactions(LocalDate from, LocalDate to, SavingsTransactionType type) {
         List<SavingsTransaction> transactions = savingsService.findTransactionsBetween(from, to);
         return type != null ? transactions.stream().filter(t -> t.getTransactionType() == type).toList() : transactions;

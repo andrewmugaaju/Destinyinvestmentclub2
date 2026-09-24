@@ -86,6 +86,50 @@ public class SavingsAccountController {
         return "redirect:/savings-accounts/" + account.getId();
     }
 
+    /**
+     * The Savings Withdrawal screen: pick a member/group, then one of their existing active
+     * savings accounts to withdraw from (unlike deposits, there is nothing to auto-open here -
+     * you can only withdraw from an account that already exists).
+     */
+    @GetMapping("/withdraw")
+    public String withdrawForm(@RequestParam(required = false) Long clientId,
+                                @RequestParam(required = false) Long groupId,
+                                Model model) {
+        model.addAttribute("clients", clientService.findAll());
+        model.addAttribute("groups", groupService.findAll());
+        model.addAttribute("selectedClientId", clientId);
+        model.addAttribute("selectedGroupId", groupId);
+        model.addAttribute("cashAccounts", accountingService.findCashAccounts());
+
+        List<SavingsAccount> accounts;
+        if (clientId != null) {
+            accounts = savingsService.findByClient(clientId);
+        } else if (groupId != null) {
+            accounts = savingsService.findByGroup(groupId);
+        } else {
+            accounts = List.of();
+        }
+        model.addAttribute("savingsAccounts", accounts.stream()
+                .filter(a -> a.getStatus() == SavingsAccountStatus.ACTIVE)
+                .toList());
+        return "savings-accounts/withdraw-form";
+    }
+
+    @PostMapping("/withdraw")
+    public String withdrawSubmit(@RequestParam Long savingsAccountId,
+                                  @RequestParam BigDecimal amount,
+                                  @RequestParam Long cashAccountId,
+                                  @RequestParam(required = false) LocalDate transactionDate,
+                                  @RequestParam(required = false) String narration,
+                                  @AuthenticationPrincipal CustomUserDetails principal,
+                                  RedirectAttributes redirectAttributes) {
+        SavingsAccount account = savingsService.getById(savingsAccountId);
+        var cashAccount = accountingService.getCashAccountById(cashAccountId);
+        savingsService.withdraw(account, amount, transactionDate, narration, principal.getUsername(), cashAccount);
+        redirectAttributes.addFlashAttribute("successMessage", "Withdrawal recorded from " + account.getAccountNumber());
+        return "redirect:/savings-accounts/" + account.getId();
+    }
+
     @GetMapping("/{id}")
     public String view(@PathVariable Long id, Model model) {
         SavingsAccount account = savingsService.getById(id);
