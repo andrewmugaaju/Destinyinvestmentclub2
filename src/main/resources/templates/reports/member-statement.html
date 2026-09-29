@@ -76,7 +76,10 @@
                 <tr th:each="r : ${report.rows}">
                     <td th:text="${r.date}">-</td>
                     <td th:text="${r.description}">-</td>
-                    <td th:text="${r.reference}">-</td>
+                    <td>
+                        <a th:if="${r.journalEntryId != null}" th:href="@{/journal/{id}(id=${r.journalEntryId})}" th:text="${r.reference}">-</a>
+                        <span th:if="${r.journalEntryId == null}" th:text="${r.reference}">-</span>
+                    </td>
                     <td th:text="${r.accountNumber}">-</td>
                     <td class="money" th:text="${r.savingsAmount != null} ? ${#numbers.formatDecimal(r.savingsAmount,1,'COMMA',2,'POINT')} : ''"></td>
                     <td class="money" th:text="${#numbers.formatDecimal(r.savingsBalance,1,'COMMA',2,'POINT')}">0.00</td>

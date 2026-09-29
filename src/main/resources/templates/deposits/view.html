@@ -4,7 +4,12 @@
 <body>
 <div th:replace="~{fragments/sidebar :: sidebar}"></div>
 <main class="container">
-    <h2 th:text="${deposit.reference}">DEP-...</h2>
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <h2 class="mb-0" th:text="${deposit.reference}">DEP-...</h2>
+        <a th:if="${deposit.journalEntryId != null}" class="btn btn-outline-secondary" th:href="@{/journal/{id}(id=${deposit.journalEntryId})}">
+            <i class="bi bi-journal-text"></i> View Journal Entry #<span th:text="${deposit.journalEntryId}">1</span>
+        </a>
+    </div>
     <div class="card p-3 mb-3">
         <div class="row">
             <div class="col-md-3"><strong>Date</strong><br/><span th:text="${deposit.transactionDate}">-</span></div>

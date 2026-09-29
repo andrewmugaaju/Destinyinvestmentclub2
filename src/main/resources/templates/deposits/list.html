@@ -11,7 +11,7 @@
     </div>
     <div class="card p-3">
         <table class="table table-hover">
-            <thead><tr><th>Reference</th><th>Date</th><th>Member / Group</th><th class="money">Total</th><th>Recorded By</th><th></th></tr></thead>
+            <thead><tr><th>Reference</th><th>Date</th><th>Member / Group</th><th class="money">Total</th><th>Recorded By</th><th>Journal</th><th></th></tr></thead>
             <tbody>
             <tr th:each="d : ${deposits}">
                 <td th:text="${d.reference}">DEP-...</td>
@@ -19,9 +19,13 @@
                 <td th:text="${d.client != null ? d.client.fullName : (d.group != null ? d.group.groupName : '-')}">-</td>
                 <td class="money" th:text="${#numbers.formatDecimal(d.totalAmount,1,'COMMA',2,'POINT')}">0.00</td>
                 <td th:text="${d.createdBy}">-</td>
+                <td>
+                    <a th:if="${d.journalEntryId != null}" class="btn btn-sm btn-outline-secondary" th:href="@{/journal/{id}(id=${d.journalEntryId})}" th:text="'#' + ${d.journalEntryId}">#1</a>
+                    <span th:if="${d.journalEntryId == null}">-</span>
+                </td>
                 <td><a class="btn btn-sm btn-outline-primary" th:href="@{/deposits/{id}(id=${d.id})}">View</a></td>
             </tr>
-            <tr th:if="${#lists.isEmpty(deposits)}"><td colspan="6" class="text-muted">No deposits recorded yet.</td></tr>
+            <tr th:if="${#lists.isEmpty(deposits)}"><td colspan="7" class="text-muted">No deposits recorded yet.</td></tr>
             </tbody>
         </table>
     </div>

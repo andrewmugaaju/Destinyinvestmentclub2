@@ -15,7 +15,7 @@
 
     <table>
         <thead>
-        <tr><th>Date</th><th>Account #</th><th>Owner</th><th>Product</th><th class="money">Amount Withdrawn</th><th class="money">Balance After</th></tr>
+        <tr><th>Date</th><th>Account #</th><th>Owner</th><th>Product</th><th class="money">Amount Withdrawn</th><th class="money">Balance After</th><th>Journal #</th></tr>
         </thead>
         <tbody>
         <tr th:each="t : ${transactions}">
@@ -25,8 +25,9 @@
             <td th:text="${t.savingsAccount.savingsProduct.name}">-</td>
             <td class="money" th:text="${#numbers.formatDecimal(t.amount,1,'COMMA',2,'POINT')}">0.00</td>
             <td class="money" th:text="${#numbers.formatDecimal(t.runningBalance,1,'COMMA',2,'POINT')}">0.00</td>
+            <td th:text="${t.journalEntryId != null} ? ('#' + ${t.journalEntryId}) : '-'">-</td>
         </tr>
-        <tr th:if="${#lists.isEmpty(transactions)}"><td colspan="6">No withdrawals in this period.</td></tr>
+        <tr th:if="${#lists.isEmpty(transactions)}"><td colspan="7">No withdrawals in this period.</td></tr>
         </tbody>
     </table>
 

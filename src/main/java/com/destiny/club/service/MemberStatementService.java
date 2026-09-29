@@ -72,7 +72,7 @@ public class MemberStatementService {
                 String description = "Savings " + humanize(txn.getTransactionType().name())
                         + (txn.getNarration() != null ? " - " + txn.getNarration() : "");
                 savingsRows.add(new MemberStatementRow(txn.getTransactionDate(), description,
-                        referenceFor(txn.getJournalEntryId(), referenceCache), account.getAccountNumber(),
+                        referenceFor(txn.getJournalEntryId(), referenceCache), txn.getJournalEntryId(), account.getAccountNumber(),
                         signedAmount, null, null, null));
             }
         }
@@ -107,7 +107,7 @@ public class MemberStatementService {
                 String description = "Loan " + humanize(txn.getTransactionType().name()) + " - " + loan.getLoanAccountNumber()
                         + (txn.getNarration() != null ? " - " + txn.getNarration() : "");
                 loanRows.add(new MemberStatementRow(txn.getTransactionDate(), description,
-                        referenceFor(txn.getJournalEntryId(), referenceCache), loan.getLoanAccountNumber(),
+                        referenceFor(txn.getJournalEntryId(), referenceCache), txn.getJournalEntryId(), loan.getLoanAccountNumber(),
                         null, null, delta, null));
             }
             openingLoan = openingLoan.add(accountOpening);
@@ -132,7 +132,7 @@ public class MemberStatementService {
             if (row.getLoanAmount() != null) {
                 runningLoan = runningLoan.add(row.getLoanAmount());
             }
-            finalRows.add(new MemberStatementRow(row.getDate(), row.getDescription(), row.getReference(),
+            finalRows.add(new MemberStatementRow(row.getDate(), row.getDescription(), row.getReference(), row.getJournalEntryId(),
                     row.getAccountNumber(), row.getSavingsAmount(), runningSavings, row.getLoanAmount(), runningLoan));
         }
 

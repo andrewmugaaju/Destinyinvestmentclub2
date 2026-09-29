@@ -51,7 +51,7 @@
     <div class="card p-3">
         <table class="table table-sm table-report">
             <thead>
-            <tr><th>Date</th><th>Loan #</th><th>Borrower</th><th>Product</th><th>Type</th><th class="money">Amount</th><th class="money">Principal</th><th class="money">Interest</th></tr>
+            <tr><th>Date</th><th>Loan #</th><th>Borrower</th><th>Product</th><th>Type</th><th class="money">Amount</th><th class="money">Principal</th><th class="money">Interest</th><th>Journal</th></tr>
             </thead>
             <tbody>
             <tr th:each="t : ${transactions}">
@@ -63,8 +63,12 @@
                 <td class="money" th:text="${#numbers.formatDecimal(t.amount,1,'COMMA',2,'POINT')}">0.00</td>
                 <td class="money" th:text="${#numbers.formatDecimal(t.principalPortion,1,'COMMA',2,'POINT')}">0.00</td>
                 <td class="money" th:text="${#numbers.formatDecimal(t.interestPortion,1,'COMMA',2,'POINT')}">0.00</td>
+                <td>
+                    <a th:if="${t.journalEntryId != null}" class="btn btn-sm btn-outline-secondary" th:href="@{/journal/{id}(id=${t.journalEntryId})}" th:text="'#' + ${t.journalEntryId}">#1</a>
+                    <span th:if="${t.journalEntryId == null}">-</span>
+                </td>
             </tr>
-            <tr th:if="${#lists.isEmpty(transactions)}"><td colspan="8" class="text-muted">No loan transactions in this period.</td></tr>
+            <tr th:if="${#lists.isEmpty(transactions)}"><td colspan="9" class="text-muted">No loan transactions in this period.</td></tr>
             </tbody>
         </table>
     </div>
