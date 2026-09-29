@@ -6,144 +6,168 @@
 <main class="container">
     <div th:replace="~{fragments/alerts :: alerts}"></div>
     <h2>Record a Deposit</h2>
-    <p class="text-muted">Capture the total amount received from a member or group, then say how much of it
-        is a savings deposit and how much is a loan repayment. The two must add up exactly to the total.</p>
+    <p class="text-muted">One payment, split across savings, shares, and loan repayment</p>
 
-    <div class="card p-4 mb-3">
-        <h5>Step 1: Select Member or Group</h5>
-        <form method="get" th:action="@{/deposits/new}" class="row g-2 align-items-end">
-            <div class="col-md-5">
-                <label class="form-label">Client</label>
-                <select class="form-select" name="clientId">
-                    <option value="">-- none --</option>
-                    <option th:each="c : ${clients}" th:value="${c.id}"
-                            th:selected="${selectedClientId != null and selectedClientId == c.id}"
-                            th:text="${c.fullName} + ' (' + ${c.clientNumber} + ')'"></option>
-                </select>
-            </div>
-            <div class="col-md-5">
-                <label class="form-label">Or Group</label>
-                <select class="form-select" name="groupId">
-                    <option value="">-- none --</option>
-                    <option th:each="g : ${groups}" th:value="${g.id}"
-                            th:selected="${selectedGroupId != null and selectedGroupId == g.id}"
-                            th:text="${g.groupName}"></option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-outline-primary w-100">Load Accounts</button>
-            </div>
-        </form>
-    </div>
-
-    <div class="card p-4" th:if="${selectedClientId != null or selectedGroupId != null}">
-        <h5>Step 2: Total Received</h5>
-
-        <div class="alert alert-warning" th:if="${#lists.isEmpty(savingsAccounts) and #lists.isEmpty(loanAccounts)}">
-            This member/group has no active savings accounts or active loans to post against.
-        </div>
-        <div class="alert alert-warning" th:if="${#lists.isEmpty(cashAccounts)}">
-            No payment channel accounts are configured yet. Mark at least one account as a "Payment channel" under
-            <a href="/gl-accounts">Chart of Accounts</a> before recording deposits.
-        </div>
-
-        <form th:if="${!#lists.isEmpty(cashAccounts)}" th:action="@{/deposits}" method="post" id="depositForm">
+    <div class="card p-4">
+        <form th:action="@{/deposits}" method="post" id="depositForm">
             <input type="hidden" name="clientId" th:value="${selectedClientId}"/>
             <input type="hidden" name="groupId" th:value="${selectedGroupId}"/>
 
             <div class="row g-3 mb-4">
-                <div class="col-md-3">
-                    <label class="form-label">Transaction Date</label>
-                    <input type="date" class="form-control" name="transactionDate" th:value="${T(java.time.LocalDate).now()}" required/>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Total Deposit Amount</label>
-                    <input type="number" step="0.01" min="0.01" class="form-control" id="totalAmount" name="totalAmount" required/>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Receiving Account</label>
-                    <select class="form-select" name="cashAccountId" required>
-                        <option th:each="ca : ${cashAccounts}" th:value="${ca.id}" th:text="${ca.code} + ' - ' + ${ca.name}"></option>
+                <div class="col-md-4">
+                    <label class="form-label">Member <span class="text-danger">*</span></label>
+                    <select class="form-select" onchange="onMemberChange(this)">
+                        <option value="">-- Select member --</option>
+                        <optgroup label="Clients">
+                            <option th:each="c : ${clients}" th:value="'C-' + ${c.id}"
+                                    th:selected="${selectedClientId != null and selectedClientId == c.id}"
+                                    th:text="${c.fullName} + ' (' + ${c.clientNumber} + ')'"></option>
+                        </optgroup>
+                        <optgroup label="Groups">
+                            <option th:each="g : ${groups}" th:value="'G-' + ${g.id}"
+                                    th:selected="${selectedGroupId != null and selectedGroupId == g.id}"
+                                    th:text="${g.groupName}"></option>
+                        </optgroup>
                     </select>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label">Narration (optional)</label>
-                    <input type="text" class="form-control" name="narration"/>
+                <div class="col-md-4">
+                    <label class="form-label">Date <span class="text-danger">*</span></label>
+                    <input type="date" class="form-control" name="transactionDate" th:value="${T(java.time.LocalDate).now()}" required/>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Receipt / Reference</label>
+                    <input type="text" class="form-control" name="receiptNumber" placeholder="e.g. RCT-001"/>
                 </div>
             </div>
 
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <div class="border rounded p-3 h-100" th:classappend="${#lists.isEmpty(savingsAccounts)} ? 'bg-light text-muted' : ''">
-                        <h6><i class="bi bi-piggy-bank"></i> Savings Deposit</h6>
-                        <div th:if="${#lists.isEmpty(savingsAccounts)}" class="small">No active savings account for this member/group.</div>
-                        <div th:unless="${#lists.isEmpty(savingsAccounts)}">
-                            <div class="mb-2">
-                                <label class="form-label">Savings Account &amp; Product</label>
-                                <select class="form-select" name="savingsAccountId">
-                                    <option th:each="s : ${savingsAccounts}" th:value="${s.id}"
-                                            th:text="${s.accountNumber} + ' - ' + ${s.ownerName} + ' - ' + ${s.savingsProduct.name} + ' (bal ' + ${#numbers.formatDecimal(s.balance,1,'COMMA',2,'POINT')} + ')'"></option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="form-label">Savings Amount</label>
-                                <input type="number" step="0.01" min="0" class="form-control split-amount" id="savingsAmount" name="savingsAmount" value="0"/>
-                            </div>
+            <div class="text-muted" th:if="${selectedClientId == null and selectedGroupId == null}">
+                Select a member or group above to continue.
+            </div>
+
+            <div th:if="${(selectedClientId != null or selectedGroupId != null) and #lists.isEmpty(cashAccounts)}" class="alert alert-warning">
+                No payment channel accounts are configured yet. Mark at least one account as a "Payment channel" under
+                <a href="/gl-accounts">Chart of Accounts</a> before recording deposits.
+            </div>
+
+            <div th:if="${(selectedClientId != null or selectedGroupId != null) and !#lists.isEmpty(cashAccounts)}">
+                <div class="alert alert-warning" th:if="${#lists.isEmpty(savingsAccounts) and #lists.isEmpty(loanAccounts)}">
+                    This member/group has no active savings account or active loan - you can still record a share purchase below.
+                </div>
+
+                <hr/>
+                <h6 class="text-uppercase text-muted small mb-3"><i class="bi bi-cash-stack"></i> Total Deposit Received</h6>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Total Amount <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text">UGX</span>
+                            <input type="number" step="0.01" min="0.01" class="form-control" id="totalAmount" name="totalAmount" required/>
                         </div>
+                        <div class="form-text">The full amount the member is depositing right now — split it below.</div>
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <div class="border rounded p-3 h-100" th:classappend="${#lists.isEmpty(loanAccounts)} ? 'bg-light text-muted' : ''">
-                        <h6><i class="bi bi-cash-coin"></i> Loan Repayment</h6>
-                        <div th:if="${#lists.isEmpty(loanAccounts)}" class="small">No active loan for this member/group.</div>
-                        <div th:unless="${#lists.isEmpty(loanAccounts)}">
-                            <div class="mb-2">
-                                <label class="form-label">Loan Account &amp; Product</label>
-                                <select class="form-select" name="loanAccountId">
-                                    <option th:each="l : ${loanAccounts}" th:value="${l.id}"
-                                            th:text="${l.loanAccountNumber} + ' - ' + ${l.borrowerName} + ' - ' + ${l.loanProduct.name} + ' (owing ' + ${#numbers.formatDecimal(l.totalOutstanding,1,'COMMA',2,'POINT')} + ')'"></option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="form-label">Loan Repayment Amount</label>
-                                <input type="number" step="0.01" min="0" class="form-control split-amount" id="loanAmount" name="loanAmount" value="0"/>
-                            </div>
+
+                <hr/>
+                <h6 class="text-uppercase text-muted small mb-3"><i class="bi bi-pie-chart"></i> Deposit Split</h6>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Savings</label>
+                        <div class="input-group">
+                            <span class="input-group-text">UGX</span>
+                            <input type="number" step="0.01" min="0" class="form-control split-amount" id="savingsAmount"
+                                   name="savingsAmount" value="0" th:disabled="${#lists.isEmpty(savingsAccounts)}"/>
                         </div>
+                        <input type="hidden" name="savingsAccountId" th:if="${savingsAccounts.size() == 1}" th:value="${savingsAccounts[0].id}"/>
+                        <select class="form-select form-select-sm mt-1" name="savingsAccountId" th:if="${savingsAccounts.size() > 1}">
+                            <option th:each="s : ${savingsAccounts}" th:value="${s.id}"
+                                    th:text="${s.accountNumber} + ' - ' + ${s.savingsProduct.name} + ' (bal ' + ${#numbers.formatDecimal(s.balance,1,'COMMA',2,'POINT')} + ')'"></option>
+                        </select>
+                        <div class="form-text" th:if="${#lists.isEmpty(savingsAccounts)}">No active savings account</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Shares</label>
+                        <div class="input-group">
+                            <span class="input-group-text">UGX</span>
+                            <input type="number" step="0.01" min="0" class="form-control split-amount" id="sharesAmount"
+                                   name="sharesAmount" value="0"/>
+                        </div>
+                        <div class="form-text">Posted to Member Share Capital.</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Loan Repayment</label>
+                        <div class="input-group">
+                            <span class="input-group-text">UGX</span>
+                            <input type="number" step="0.01" min="0" class="form-control split-amount" id="loanAmount"
+                                   name="loanAmount" value="0" th:disabled="${#lists.isEmpty(loanAccounts)}"/>
+                        </div>
+                        <input type="hidden" name="loanAccountId" th:if="${loanAccounts.size() == 1}" th:value="${loanAccounts[0].id}"/>
+                        <select class="form-select form-select-sm mt-1" name="loanAccountId" th:if="${loanAccounts.size() > 1}">
+                            <option th:each="l : ${loanAccounts}" th:value="${l.id}"
+                                    th:text="${l.loanAccountNumber} + ' - ' + ${l.loanProduct.name} + ' (owing ' + ${#numbers.formatDecimal(l.totalOutstanding,1,'COMMA',2,'POINT')} + ')'"></option>
+                        </select>
+                        <div class="form-text" th:if="${#lists.isEmpty(loanAccounts)}">No active loan</div>
                     </div>
                 </div>
-            </div>
 
-            <div class="row mt-4">
-                <div class="col-md-4 offset-md-8">
-                    <table class="table table-sm">
-                        <tr><td>Total Deposit</td><td class="money" id="displayTotal">0.00</td></tr>
-                        <tr><td>Savings + Loan Repayment</td><td class="money" id="displaySplit">0.00</td></tr>
-                        <tr><td>Difference</td><td class="money" id="displayDiff">0.00</td></tr>
-                    </table>
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-3 pt-3 border-top">
+                    <div>Split total: <strong id="displaySplit">UGX 0.00</strong></div>
+                    <div class="text-muted small">Total deposit: <span id="displayTotal">UGX 0.00</span></div>
                 </div>
-            </div>
+                <div class="alert alert-danger mt-2" id="mismatchAlert" style="display:none;">
+                    Savings + Shares + Loan Repayment must add up exactly to the Total Amount before you can save.
+                </div>
 
-            <div class="alert alert-danger" id="mismatchAlert" style="display:none;">
-                Savings Amount + Loan Repayment Amount must add up exactly to the Total Deposit Amount before you can save.
-            </div>
+                <hr/>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Receiving Account <span class="text-danger">*</span></label>
+                        <select class="form-select" name="cashAccountId" required>
+                            <option th:each="ca : ${cashAccounts}" th:value="${ca.id}" th:text="${ca.code} + ' - ' + ${ca.name}"></option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Notes</label>
+                        <input type="text" class="form-control" name="narration" placeholder="Optional"/>
+                    </div>
+                </div>
 
-            <button type="submit" class="btn btn-primary" id="submitBtn">Save Deposit</button>
+                <button type="submit" class="btn btn-success mt-4" id="submitBtn"><i class="bi bi-check-circle"></i> Save Deposit</button>
+            </div>
         </form>
     </div>
 
     <script>
-        function recalc() {
-            const total = parseFloat(document.getElementById('totalAmount').value) || 0;
-            const savingsInput = document.getElementById('savingsAmount');
-            const loanInput = document.getElementById('loanAmount');
-            const savings = savingsInput ? (parseFloat(savingsInput.value) || 0) : 0;
-            const loan = loanInput ? (parseFloat(loanInput.value) || 0) : 0;
-            const split = savings + loan;
+        function onMemberChange(sel) {
+            var val = sel.value;
+            var url = '/deposits/new';
+            if (val.indexOf('C-') === 0) {
+                url += '?clientId=' + encodeURIComponent(val.slice(2));
+            } else if (val.indexOf('G-') === 0) {
+                url += '?groupId=' + encodeURIComponent(val.slice(2));
+            }
+            window.location.href = url;
+        }
 
-            document.getElementById('displayTotal').innerText = total.toFixed(2);
-            document.getElementById('displaySplit').innerText = split.toFixed(2);
-            const diff = Math.round((total - split) * 100) / 100;
-            document.getElementById('displayDiff').innerText = diff.toFixed(2);
+        function recalc() {
+            var totalEl = document.getElementById('totalAmount');
+            var total = totalEl ? (parseFloat(totalEl.value) || 0) : 0;
+            var savingsEl = document.getElementById('savingsAmount');
+            var sharesEl = document.getElementById('sharesAmount');
+            var loanEl = document.getElementById('loanAmount');
+            var savings = savingsEl ? (parseFloat(savingsEl.value) || 0) : 0;
+            var shares = sharesEl ? (parseFloat(sharesEl.value) || 0) : 0;
+            var loan = loanEl ? (parseFloat(loanEl.value) || 0) : 0;
+            var split = savings + shares + loan;
+
+            var displayTotal = document.getElementById('displayTotal');
+            var displaySplit = document.getElementById('displaySplit');
+            if (!displayTotal || !displaySplit) return false;
+
+            displayTotal.innerText = 'UGX ' + total.toFixed(2);
+            displaySplit.innerText = 'UGX ' + split.toFixed(2);
+            var diff = Math.round((total - split) * 100) / 100;
+            displaySplit.classList.toggle('text-danger', diff !== 0);
+            displaySplit.classList.toggle('text-success', diff === 0 && total > 0);
             return diff === 0 && total > 0;
         }
 
@@ -152,11 +176,12 @@
         });
 
         document.getElementById('depositForm').addEventListener('submit', function (e) {
-            if (!recalc()) {
+            if (document.getElementById('totalAmount') && !recalc()) {
                 e.preventDefault();
                 document.getElementById('mismatchAlert').style.display = '';
             } else {
-                document.getElementById('mismatchAlert').style.display = 'none';
+                var mismatchAlert = document.getElementById('mismatchAlert');
+                if (mismatchAlert) mismatchAlert.style.display = 'none';
             }
         });
 

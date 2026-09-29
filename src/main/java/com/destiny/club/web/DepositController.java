@@ -78,9 +78,11 @@ public class DepositController {
                         @RequestParam Long cashAccountId,
                         @RequestParam LocalDate transactionDate,
                         @RequestParam BigDecimal totalAmount,
+                        @RequestParam(required = false) String receiptNumber,
                         @RequestParam(required = false) String narration,
                         @RequestParam(required = false) Long savingsAccountId,
                         @RequestParam(required = false) BigDecimal savingsAmount,
+                        @RequestParam(required = false) BigDecimal sharesAmount,
                         @RequestParam(required = false) Long loanAccountId,
                         @RequestParam(required = false) BigDecimal loanAmount,
                         @AuthenticationPrincipal CustomUserDetails principal,
@@ -91,6 +93,7 @@ public class DepositController {
         form.setCashAccountId(cashAccountId);
         form.setTransactionDate(transactionDate);
         form.setTotalAmount(totalAmount);
+        form.setReceiptNumber(receiptNumber);
         form.setNarration(narration);
 
         List<DepositAllocationForm> allocations = new ArrayList<>();
@@ -99,6 +102,12 @@ public class DepositController {
             a.setAllocationType(AllocationType.SAVINGS_DEPOSIT);
             a.setTargetAccountId(savingsAccountId);
             a.setAmount(savingsAmount);
+            allocations.add(a);
+        }
+        if (sharesAmount != null && sharesAmount.compareTo(BigDecimal.ZERO) > 0) {
+            DepositAllocationForm a = new DepositAllocationForm();
+            a.setAllocationType(AllocationType.SHARE_PURCHASE);
+            a.setAmount(sharesAmount);
             allocations.add(a);
         }
         if (loanAccountId != null && loanAmount != null && loanAmount.compareTo(BigDecimal.ZERO) > 0) {
@@ -128,6 +137,9 @@ public class DepositController {
             var account = savingsService.getById(allocation.getTargetAccountId());
             return new DepositAllocationView(allocation.getAllocationType(), account.getAccountNumber(),
                     account.getSavingsProduct().getName(), allocation.getAmount());
+        }
+        if (allocation.getAllocationType() == AllocationType.SHARE_PURCHASE) {
+            return new DepositAllocationView(allocation.getAllocationType(), "-", "Member Share Capital", allocation.getAmount());
         }
         var loan = loanService.getById(allocation.getTargetAccountId());
         return new DepositAllocationView(allocation.getAllocationType(), loan.getLoanAccountNumber(),

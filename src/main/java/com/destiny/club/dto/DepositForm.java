@@ -17,6 +17,7 @@ public class DepositForm {
     private Long cashAccountId;
     private LocalDate transactionDate = LocalDate.now();
     private BigDecimal totalAmount;
+    private String receiptNumber;
     private String narration;
     private List<DepositAllocationForm> allocations = new ArrayList<>();
 
@@ -58,6 +59,14 @@ public class DepositForm {
 
     public void setTotalAmount(BigDecimal totalAmount) {
         this.totalAmount = totalAmount;
+    }
+
+    public String getReceiptNumber() {
+        return receiptNumber;
+    }
+
+    public void setReceiptNumber(String receiptNumber) {
+        this.receiptNumber = receiptNumber;
     }
 
     public String getNarration() {

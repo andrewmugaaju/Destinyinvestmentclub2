@@ -26,8 +26,11 @@ public class DepositAllocation {
     @Column(nullable = false, length = 20)
     private AllocationType allocationType;
 
-    /** Id of the SavingsAccount or LoanAccount this allocation is posted against. */
-    @Column(nullable = false)
+    /**
+     * Id of the SavingsAccount or LoanAccount this allocation is posted against.
+     * Null for SHARE_PURCHASE, which has no dedicated account - it is owned directly by the
+     * deposit's client or group.
+     */
     private Long targetAccountId;
 
     @Column(nullable = false, precision = 18, scale = 2)

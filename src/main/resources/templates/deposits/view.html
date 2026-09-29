@@ -12,6 +12,9 @@
             <div class="col-md-3"><strong>Total Amount</strong><br/><span th:text="${#numbers.formatDecimal(deposit.totalAmount,1,'COMMA',2,'POINT')}">0.00</span></div>
             <div class="col-md-3"><strong>Recorded By</strong><br/><span th:text="${deposit.createdBy}">-</span></div>
         </div>
+        <div class="row mt-2" th:if="${deposit.receiptNumber != null and !deposit.receiptNumber.isEmpty()}">
+            <div class="col-md-3"><strong>Receipt / Reference</strong><br/><span th:text="${deposit.receiptNumber}">-</span></div>
+        </div>
     </div>
 
     <div class="card p-3">
@@ -20,7 +23,7 @@
             <thead><tr><th>Type</th><th>Account</th><th>Product</th><th class="money">Amount</th></tr></thead>
             <tbody>
             <tr th:each="a : ${allocationViews}">
-                <td th:text="${a.allocationType == T(com.destiny.club.domain.deposit.AllocationType).SAVINGS_DEPOSIT} ? 'Savings Deposit' : 'Loan Repayment'">-</td>
+                <td th:text="${a.allocationType == T(com.destiny.club.domain.deposit.AllocationType).SAVINGS_DEPOSIT} ? 'Savings Deposit' : (${a.allocationType == T(com.destiny.club.domain.deposit.AllocationType).SHARE_PURCHASE} ? 'Share Purchase' : 'Loan Repayment')">-</td>
                 <td th:text="${a.accountNumber}">-</td>
                 <td th:text="${a.productName}">-</td>
                 <td class="money" th:text="${#numbers.formatDecimal(a.amount,1,'COMMA',2,'POINT')}">0.00</td>

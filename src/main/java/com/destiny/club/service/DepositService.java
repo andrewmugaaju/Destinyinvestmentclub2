@@ -101,11 +101,13 @@ public class DepositService {
         deposit.setGroup(group);
         deposit.setTransactionDate(date);
         deposit.setTotalAmount(form.getTotalAmount());
+        deposit.setReceiptNumber(form.getReceiptNumber());
         deposit.setNarration(form.getNarration());
         deposit.setCreatedBy(createdBy);
         deposit.setReference("DEP-" + date.format(REF_FORMAT) + "-" + UUID.randomUUID().toString().substring(0, 6).toUpperCase());
 
         BigDecimal savingsTotal = BigDecimal.ZERO;
+        BigDecimal sharesTotal = BigDecimal.ZERO;
         BigDecimal loanPrincipalTotal = BigDecimal.ZERO;
         BigDecimal loanInterestTotal = BigDecimal.ZERO;
 
@@ -130,6 +132,8 @@ public class DepositService {
                 txn.setDepositTransactionId(null); // set after deposit has an id, below
                 savingsTxns.add(txn);
                 savingsTotal = savingsTotal.add(allocationForm.getAmount());
+            } else if (allocationForm.getAllocationType() == AllocationType.SHARE_PURCHASE) {
+                sharesTotal = sharesTotal.add(allocationForm.getAmount());
             } else {
                 LoanAccount loan = loanService.getById(allocationForm.getTargetAccountId());
                 LoanTransaction txn = loanService.recordRepayment(loan, allocationForm.getAmount(), date,
@@ -156,6 +160,10 @@ public class DepositService {
         if (savingsTotal.compareTo(BigDecimal.ZERO) > 0) {
             GLAccount savingsControl = accountingService.getAccountByCode(GLCodes.MEMBER_SAVINGS);
             lines.add(JournalEntryLine.credit(savingsControl, savingsTotal, "Savings deposits - " + deposit.getReference()));
+        }
+        if (sharesTotal.compareTo(BigDecimal.ZERO) > 0) {
+            GLAccount shareCapital = accountingService.getAccountByCode(GLCodes.SHARE_CAPITAL);
+            lines.add(JournalEntryLine.credit(shareCapital, sharesTotal, "Share purchase - " + deposit.getReference()));
         }
         if (loanPrincipalTotal.compareTo(BigDecimal.ZERO) > 0) {
             GLAccount loansReceivable = accountingService.getAccountByCode(GLCodes.LOANS_RECEIVABLE);

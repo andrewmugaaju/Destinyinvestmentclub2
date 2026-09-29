@@ -32,6 +32,10 @@ public class DepositTransaction {
     @Column(nullable = false, unique = true, length = 40)
     private String reference;
 
+    /** The teller-entered receipt/reference number for this payment (e.g. a paying-in slip number). */
+    @Column(length = 60)
+    private String receiptNumber;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "client_id")
     private Client client;
