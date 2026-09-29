@@ -1,7 +1,6 @@
 package com.destiny.club.domain.savings;
 
 import com.destiny.club.domain.client.Client;
-import com.destiny.club.domain.client.Group;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -29,11 +28,6 @@ public class SavingsAccount {
     @JoinColumn(name = "client_id")
     private Client client;
 
-    /** Set when this is a group savings account rather than an individual one. */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "group_id")
-    private Group group;
-
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "savings_product_id", nullable = false)
     private SavingsProduct savingsProduct;
@@ -53,12 +47,6 @@ public class SavingsAccount {
     private LocalDateTime createdAt = LocalDateTime.now();
 
     public String getOwnerName() {
-        if (client != null) {
-            return client.getFullName();
-        }
-        if (group != null) {
-            return group.getGroupName() + " (group)";
-        }
-        return "-";
+        return client != null ? client.getFullName() : "-";
     }
 }

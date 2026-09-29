@@ -6,12 +6,12 @@
 <main class="container">
     <div th:replace="~{fragments/alerts :: alerts}"></div>
     <h2>Savings Withdrawal</h2>
-    <p class="text-muted">Withdraw money from a member's or group's existing savings account.</p>
+    <p class="text-muted">Withdraw money from a member's existing savings account.</p>
 
     <div class="card p-4 mb-3">
-        <h5>Step 1: Select Member or Group</h5>
+        <h5>Step 1: Select Member</h5>
         <form method="get" th:action="@{/savings-accounts/withdraw}" class="row g-2 align-items-end">
-            <div class="col-md-5">
+            <div class="col-md-10">
                 <label class="form-label">Client</label>
                 <select class="form-select" name="clientId">
                     <option value="">-- none --</option>
@@ -20,26 +20,17 @@
                             th:text="${c.fullName} + ' (' + ${c.clientNumber} + ')'"></option>
                 </select>
             </div>
-            <div class="col-md-5">
-                <label class="form-label">Or Group</label>
-                <select class="form-select" name="groupId">
-                    <option value="">-- none --</option>
-                    <option th:each="g : ${groups}" th:value="${g.id}"
-                            th:selected="${selectedGroupId != null and selectedGroupId == g.id}"
-                            th:text="${g.groupName}"></option>
-                </select>
-            </div>
             <div class="col-md-2">
                 <button type="submit" class="btn btn-outline-primary w-100">Load Accounts</button>
             </div>
         </form>
     </div>
 
-    <div class="card p-4" th:if="${selectedClientId != null or selectedGroupId != null}">
+    <div class="card p-4" th:if="${selectedClientId != null}">
         <h5>Step 2: Withdrawal Details</h5>
 
         <div class="alert alert-warning" th:if="${#lists.isEmpty(savingsAccounts)}">
-            This member/group has no active savings account to withdraw from.
+            This member has no active savings account to withdraw from.
         </div>
         <div class="alert alert-warning" th:if="${!#lists.isEmpty(savingsAccounts) and #lists.isEmpty(cashAccounts)}">
             No payment channel accounts are configured yet. Mark at least one account as a "Payment channel" under

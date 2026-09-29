@@ -3,7 +3,6 @@ package com.destiny.club.web;
 import com.destiny.club.domain.client.Group;
 import com.destiny.club.service.GroupService;
 import com.destiny.club.service.LoanService;
-import com.destiny.club.service.SavingsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -16,7 +15,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class GroupController {
 
     private final GroupService groupService;
-    private final SavingsService savingsService;
     private final LoanService loanService;
 
     @GetMapping
@@ -49,7 +47,6 @@ public class GroupController {
         Group group = groupService.getById(id);
         model.addAttribute("group", group);
         model.addAttribute("members", groupService.members(id));
-        model.addAttribute("savingsAccounts", savingsService.findByGroup(id));
         model.addAttribute("loanAccounts", loanService.findByGroup(id));
         return "groups/view";
     }

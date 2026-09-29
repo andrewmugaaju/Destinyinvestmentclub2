@@ -4,7 +4,6 @@ import com.destiny.club.domain.accounting.GLAccount;
 import com.destiny.club.domain.accounting.GLCodes;
 import com.destiny.club.domain.accounting.JournalEntryLine;
 import com.destiny.club.domain.client.Client;
-import com.destiny.club.domain.client.Group;
 import com.destiny.club.domain.savings.*;
 import com.destiny.club.exception.BusinessException;
 import com.destiny.club.exception.NotFoundException;
@@ -39,10 +38,6 @@ public class SavingsService {
         return savingsAccountRepository.findByClientId(clientId);
     }
 
-    public List<SavingsAccount> findByGroup(Long groupId) {
-        return savingsAccountRepository.findByGroupId(groupId);
-    }
-
     public List<SavingsTransaction> transactionsFor(Long savingsAccountId) {
         return savingsTransactionRepository.findBySavingsAccountIdOrderByTransactionDateDescIdDesc(savingsAccountId);
     }
@@ -53,13 +48,12 @@ public class SavingsService {
     }
 
     @Transactional
-    public SavingsAccount openAccount(Client client, Group group, SavingsProduct product, LocalDate openedDate) {
-        if (client == null && group == null) {
-            throw new BusinessException("A savings account must belong to a client or a group");
+    public SavingsAccount openAccount(Client client, SavingsProduct product, LocalDate openedDate) {
+        if (client == null) {
+            throw new BusinessException("A savings account must belong to a client");
         }
         SavingsAccount account = new SavingsAccount();
         account.setClient(client);
-        account.setGroup(group);
         account.setSavingsProduct(product);
         account.setOpenedDate(openedDate != null ? openedDate : LocalDate.now());
         account.setAccountNumber(generateAccountNumber());
@@ -68,18 +62,18 @@ public class SavingsService {
     }
 
     /**
-     * Returns the client's/group's existing active savings account under the given product, or
-     * silently opens a new one if they don't have one yet. Used by the Savings Deposit screen so
-     * that a teller never has to "open an account" as a separate step - the first deposit under a
+     * Returns the client's existing active savings account under the given product, or silently
+     * opens a new one if they don't have one yet. Used by the Savings Deposit screen so that a
+     * teller never has to "open an account" as a separate step - the first deposit under a
      * product opens it automatically.
      */
     @Transactional
-    public SavingsAccount findOrOpenAccount(Client client, Group group, SavingsProduct product) {
-        List<SavingsAccount> existing = client != null ? findByClient(client.getId()) : findByGroup(group.getId());
+    public SavingsAccount findOrOpenAccount(Client client, SavingsProduct product) {
+        List<SavingsAccount> existing = findByClient(client.getId());
         return existing.stream()
                 .filter(a -> a.getSavingsProduct().getId().equals(product.getId()) && a.getStatus() == SavingsAccountStatus.ACTIVE)
                 .findFirst()
-                .orElseGet(() -> openAccount(client, group, product, LocalDate.now()));
+                .orElseGet(() -> openAccount(client, product, LocalDate.now()));
     }
 
     private String generateAccountNumber() {

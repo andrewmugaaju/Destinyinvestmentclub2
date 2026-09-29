@@ -59,7 +59,8 @@ public class DepositController {
             model.addAttribute("savingsAccounts", filterActive(savingsService.findByClient(clientId)));
             model.addAttribute("loanAccounts", loanService.findActiveByClient(clientId));
         } else if (groupId != null) {
-            model.addAttribute("savingsAccounts", filterActive(savingsService.findByGroup(groupId)));
+            // Groups no longer have their own savings accounts - only loan repayments and shares apply.
+            model.addAttribute("savingsAccounts", Collections.emptyList());
             model.addAttribute("loanAccounts", loanService.findActiveByGroup(groupId));
         } else {
             model.addAttribute("savingsAccounts", Collections.emptyList());

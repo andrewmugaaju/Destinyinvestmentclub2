@@ -6,13 +6,13 @@
 <main class="container">
     <div th:replace="~{fragments/alerts :: alerts}"></div>
     <h2>Savings Deposit</h2>
-    <p class="text-muted">Deposit money into a member's or group's savings. Pick the product - if they don't already
+    <p class="text-muted">Deposit money into a member's savings. Pick the product - if they don't already
         have an account under it, one is opened automatically.</p>
 
     <div class="card p-4 mb-3">
-        <h5>Step 1: Select Member or Group</h5>
+        <h5>Step 1: Select Member</h5>
         <form method="get" th:action="@{/savings-accounts/deposit}" class="row g-2 align-items-end">
-            <div class="col-md-5">
+            <div class="col-md-10">
                 <label class="form-label">Client</label>
                 <select class="form-select" name="clientId">
                     <option value="">-- none --</option>
@@ -21,22 +21,13 @@
                             th:text="${c.fullName} + ' (' + ${c.clientNumber} + ')'"></option>
                 </select>
             </div>
-            <div class="col-md-5">
-                <label class="form-label">Or Group</label>
-                <select class="form-select" name="groupId">
-                    <option value="">-- none --</option>
-                    <option th:each="g : ${groups}" th:value="${g.id}"
-                            th:selected="${selectedGroupId != null and selectedGroupId == g.id}"
-                            th:text="${g.groupName}"></option>
-                </select>
-            </div>
             <div class="col-md-2">
                 <button type="submit" class="btn btn-outline-primary w-100">Load Products</button>
             </div>
         </form>
     </div>
 
-    <div class="card p-4" th:if="${selectedClientId != null or selectedGroupId != null}">
+    <div class="card p-4" th:if="${selectedClientId != null}">
         <h5>Step 2: Deposit Details</h5>
 
         <div class="alert alert-warning" th:if="${#lists.isEmpty(products)}">
@@ -49,7 +40,6 @@
 
         <form th:if="${!#lists.isEmpty(products) and !#lists.isEmpty(cashAccounts)}" th:action="@{/savings-accounts/deposit}" method="post">
             <input type="hidden" name="clientId" th:value="${selectedClientId}"/>
-            <input type="hidden" name="groupId" th:value="${selectedGroupId}"/>
 
             <div class="mb-3">
                 <label class="form-label">Savings Product</label>

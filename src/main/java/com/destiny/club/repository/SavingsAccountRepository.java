@@ -8,5 +8,4 @@ import java.util.List;
 public interface SavingsAccountRepository extends JpaRepository<SavingsAccount, Long> {
     boolean existsByAccountNumber(String accountNumber);
     List<SavingsAccount> findByClientId(Long clientId);
-    List<SavingsAccount> findByGroupId(Long groupId);
 }

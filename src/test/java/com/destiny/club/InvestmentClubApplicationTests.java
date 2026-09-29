@@ -83,7 +83,7 @@ class InvestmentClubApplicationTests {
         loanProduct.setDefaultTermMonths(6);
         loanProduct = loanProductService.save(loanProduct);
 
-        SavingsAccount savingsAccount = savingsService.openAccount(client, null, savingsProduct, LocalDate.now());
+        SavingsAccount savingsAccount = savingsService.openAccount(client, savingsProduct, LocalDate.now());
         GLAccount cashAccount = accountingService.getAccountByCode(GLCodes.CASH_AND_BANK);
 
         LoanAccount loan = loanService.apply(client, null, loanProduct, new BigDecimal("1000.00"), 6, new BigDecimal("20.00"));
