@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<html xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/head :: head(title='Deposit Details')}"></head>
 <body>
 <div th:replace="~{fragments/sidebar :: sidebar}"></div>
@@ -52,7 +52,7 @@
         </table>
     </div>
 
-    <div class="card p-3 mb-3" th:if="${!deposit.voided}" sec:authorize="hasAnyRole('ADMIN','MANAGER')">
+    <div class="card p-3 mb-3" th:if="${!deposit.voided and canManageDeposit}">
         <h5>Edit Narration</h5>
         <form th:action="@{/deposits/{id}/edit(id=${deposit.id})}" method="post" class="row g-2 align-items-end">
             <div class="col-md-8">
@@ -64,7 +64,7 @@
         </form>
     </div>
 
-    <div class="card p-3" th:if="${!deposit.voided}" sec:authorize="hasAnyRole('ADMIN','MANAGER')">
+    <div class="card p-3" th:if="${!deposit.voided and canManageDeposit}">
         <h5>Void This Deposit</h5>
         <p class="text-muted small">
             This reverses the whole combined receipt at once - the cash, savings, shares and loan repayment legs

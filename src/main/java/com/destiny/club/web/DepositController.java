@@ -9,6 +9,7 @@ import com.destiny.club.domain.savings.SavingsAccountStatus;
 import com.destiny.club.dto.DepositAllocationForm;
 import com.destiny.club.dto.DepositAllocationView;
 import com.destiny.club.dto.DepositForm;
+import com.destiny.club.exception.BusinessException;
 import com.destiny.club.security.CustomUserDetails;
 import com.destiny.club.service.AccountingService;
 import com.destiny.club.service.ClientService;
@@ -19,6 +20,7 @@ import com.destiny.club.service.SavingsProductService;
 import com.destiny.club.service.SavingsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -29,6 +31,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -48,7 +51,17 @@ public class DepositController {
 
     @GetMapping
     public String list(Model model) {
-        model.addAttribute("deposits", depositService.findAll());
+        List<DepositTransaction> deposits = depositService.findAll();
+        Map<Long, String> savingsProductByDepositId = new HashMap<>();
+        for (DepositTransaction d : deposits) {
+            d.getAllocations().stream()
+                    .filter(a -> a.getAllocationType() == AllocationType.SAVINGS_DEPOSIT)
+                    .findFirst()
+                    .ifPresent(a -> savingsProductByDepositId.put(d.getId(),
+                            savingsService.getById(a.getTargetAccountId()).getSavingsProduct().getName()));
+        }
+        model.addAttribute("deposits", deposits);
+        model.addAttribute("savingsProductByDepositId", savingsProductByDepositId);
         return "deposits/list";
     }
 
@@ -148,11 +161,42 @@ public class DepositController {
     }
 
     @GetMapping("/{id}")
-    public String view(@PathVariable Long id, Model model) {
+    public String view(@PathVariable Long id, @AuthenticationPrincipal CustomUserDetails principal, Model model) {
         DepositTransaction deposit = depositService.getById(id);
         model.addAttribute("deposit", deposit);
         model.addAttribute("allocationViews", deposit.getAllocations().stream().map(this::toView).toList());
+        model.addAttribute("canManageDeposit", canManage(deposit, principal));
         return "deposits/view";
+    }
+
+    /**
+     * ADMIN/MANAGER can edit or void any deposit. A Loan Officer - who has no other screen at
+     * all - can only edit or void deposits they themselves recorded; everyone else (tellers,
+     * accountants) has no edit/void access here, unchanged from before.
+     */
+    private boolean canManage(DepositTransaction deposit, CustomUserDetails principal) {
+        if (hasAnyRole(principal, "ROLE_ADMIN", "ROLE_MANAGER")) {
+            return true;
+        }
+        return hasAnyRole(principal, "ROLE_LOAN_OFFICER")
+                && principal.getUsername().equals(deposit.getCreatedBy());
+    }
+
+    private boolean hasAnyRole(CustomUserDetails principal, String... authorities) {
+        List<String> wanted = List.of(authorities);
+        for (GrantedAuthority authority : principal.getAuthorities()) {
+            if (wanted.contains(authority.getAuthority())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void requireCanManage(Long depositId, CustomUserDetails principal) {
+        DepositTransaction deposit = depositService.getById(depositId);
+        if (!canManage(deposit, principal)) {
+            throw new BusinessException("You can only edit or void deposits you created yourself");
+        }
     }
 
     private DepositAllocationView toView(DepositAllocation allocation) {
@@ -170,22 +214,24 @@ public class DepositController {
     }
 
     @PostMapping("/{id}/edit")
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','LOAN_OFFICER')")
     public String edit(@PathVariable Long id,
                         @RequestParam(required = false) String narration,
                         @AuthenticationPrincipal CustomUserDetails principal,
                         RedirectAttributes redirectAttributes) {
+        requireCanManage(id, principal);
         depositService.updateNarration(id, narration, principal.getUsername());
         redirectAttributes.addFlashAttribute("successMessage", "Deposit updated");
         return "redirect:/deposits/" + id;
     }
 
     @PostMapping("/{id}/void")
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','LOAN_OFFICER')")
     public String voidDeposit(@PathVariable Long id,
                                @RequestParam(required = false) String reason,
                                @AuthenticationPrincipal CustomUserDetails principal,
                                RedirectAttributes redirectAttributes) {
+        requireCanManage(id, principal);
         depositService.voidDeposit(id, principal.getUsername(), reason);
         redirectAttributes.addFlashAttribute("successMessage", "Deposit voided");
         return "redirect:/deposits/" + id;
