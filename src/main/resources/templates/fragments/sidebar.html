@@ -54,8 +54,8 @@
             <a class="sidebar-link" href="/reports/balance-sheet" sec:authorize="hasAnyRole('ADMIN','MANAGER','ACCOUNTANT')"><i class="bi bi-bar-chart-steps"></i><span>Balance Sheet</span></a>
             <a class="sidebar-link" href="/reports/general-ledger" sec:authorize="hasAnyRole('ADMIN','MANAGER','ACCOUNTANT')"><i class="bi bi-journal-bookmark"></i><span>General Ledger</span></a>
 
-            <div class="sidebar-heading" sec:authorize="hasRole('ADMIN')">Administration</div>
-            <a class="sidebar-link" href="/users" sec:authorize="hasRole('ADMIN')"><i class="bi bi-person-gear"></i><span>Users</span></a>
+            <div class="sidebar-heading" sec:authorize="hasAnyRole('ADMIN','MANAGER')">Administration</div>
+            <a class="sidebar-link" href="/users" sec:authorize="hasAnyRole('ADMIN','MANAGER')"><i class="bi bi-person-gear"></i><span>Users</span></a>
         </nav>
 
         <div class="sidebar-user">
