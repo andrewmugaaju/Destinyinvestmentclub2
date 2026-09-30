@@ -18,7 +18,7 @@
 
         <nav class="sidebar-nav" sec:authorize="hasRole('LOAN_OFFICER')">
             <div class="sidebar-heading">Transactions</div>
-            <a class="sidebar-link" href="/deposits/new"><i class="bi bi-wallet2"></i><span>Deposit Screen</span></a>
+            <a class="sidebar-link" href="/deposits"><i class="bi bi-wallet2"></i><span>Deposit Screen</span></a>
         </nav>
 
         <nav class="sidebar-nav" sec:authorize="!hasRole('LOAN_OFFICER')">

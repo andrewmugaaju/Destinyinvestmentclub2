@@ -41,13 +41,13 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
-    /** Sends a Loan Officer straight to the Deposit Screen on login - the only page they can use - and everyone else to the dashboard as before. */
+    /** Sends a Loan Officer straight to the Deposit Report on login - the only page they can use - and everyone else to the dashboard as before. */
     @Bean
     public AuthenticationSuccessHandler loanOfficerAwareSuccessHandler() {
         return (request, response, authentication) -> {
             boolean isLoanOfficer = authentication.getAuthorities().stream()
                     .anyMatch(a -> a.getAuthority().equals("ROLE_LOAN_OFFICER"));
-            response.sendRedirect(isLoanOfficer ? "/deposits/new" : "/dashboard");
+            response.sendRedirect(isLoanOfficer ? "/deposits" : "/dashboard");
         };
     }
 

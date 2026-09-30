@@ -16,9 +16,13 @@ import com.destiny.club.service.ClientService;
 import com.destiny.club.service.DepositService;
 import com.destiny.club.service.GroupService;
 import com.destiny.club.service.LoanService;
+import com.destiny.club.service.PdfExportService;
 import com.destiny.club.service.SavingsProductService;
 import com.destiny.club.service.SavingsService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -29,6 +33,9 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -48,10 +55,49 @@ public class DepositController {
     private final SavingsProductService savingsProductService;
     private final LoanService loanService;
     private final AccountingService accountingService;
+    private final PdfExportService pdfExportService;
 
+    private static final DateTimeFormatter TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm");
+
+    /** The Deposit Report: what you land on when you click "Deposit Screen" - every combined receipt, filterable by date, exportable to PDF. */
     @GetMapping
-    public String list(Model model) {
-        List<DepositTransaction> deposits = depositService.findAll();
+    public String list(@RequestParam(required = false) LocalDate fromDate,
+                        @RequestParam(required = false) LocalDate toDate,
+                        Model model) {
+        LocalDate to = toDate != null ? toDate : LocalDate.now();
+        LocalDate from = fromDate != null ? fromDate : to.with(TemporalAdjusters.firstDayOfMonth());
+        List<DepositTransaction> deposits = depositService.findBetween(from, to);
+        model.addAttribute("deposits", deposits);
+        model.addAttribute("savingsProductByDepositId", savingsProductByDepositId(deposits));
+        model.addAttribute("fromDate", from);
+        model.addAttribute("toDate", to);
+        model.addAttribute("totalAmount", deposits.stream().map(DepositTransaction::getTotalAmount).reduce(BigDecimal.ZERO, BigDecimal::add));
+        return "deposits/list";
+    }
+
+    @GetMapping(value = "/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> pdf(@RequestParam(required = false) LocalDate fromDate,
+                                       @RequestParam(required = false) LocalDate toDate,
+                                       @AuthenticationPrincipal CustomUserDetails principal) {
+        LocalDate to = toDate != null ? toDate : LocalDate.now();
+        LocalDate from = fromDate != null ? fromDate : to.with(TemporalAdjusters.firstDayOfMonth());
+        List<DepositTransaction> deposits = depositService.findBetween(from, to);
+        Map<String, Object> model = new HashMap<>();
+        model.put("deposits", deposits);
+        model.put("savingsProductByDepositId", savingsProductByDepositId(deposits));
+        model.put("fromDate", from);
+        model.put("toDate", to);
+        model.put("totalAmount", deposits.stream().map(DepositTransaction::getTotalAmount).reduce(BigDecimal.ZERO, BigDecimal::add));
+        model.put("generatedAt", LocalDateTime.now().format(TIMESTAMP_FORMAT));
+        model.put("generatedBy", principal != null ? principal.getUsername() : "-");
+        byte[] pdf = pdfExportService.renderPdf("reports/pdf/deposits-report-pdf", model);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"deposit-report-" + from + "-to-" + to + ".pdf\"")
+                .body(pdf);
+    }
+
+    private Map<Long, String> savingsProductByDepositId(List<DepositTransaction> deposits) {
         Map<Long, String> savingsProductByDepositId = new HashMap<>();
         for (DepositTransaction d : deposits) {
             d.getAllocations().stream()
@@ -60,9 +106,7 @@ public class DepositController {
                     .ifPresent(a -> savingsProductByDepositId.put(d.getId(),
                             savingsService.getById(a.getTargetAccountId()).getSavingsProduct().getName()));
         }
-        model.addAttribute("deposits", deposits);
-        model.addAttribute("savingsProductByDepositId", savingsProductByDepositId);
-        return "deposits/list";
+        return savingsProductByDepositId;
     }
 
     @GetMapping("/new")

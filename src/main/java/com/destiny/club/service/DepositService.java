@@ -54,6 +54,11 @@ public class DepositService {
         return depositTransactionRepository.findAllByOrderByTransactionDateDescIdDesc();
     }
 
+    /** All deposit receipts within a date range, newest first - backs the Deposit Report. */
+    public List<DepositTransaction> findBetween(LocalDate fromDate, LocalDate toDate) {
+        return depositTransactionRepository.findByTransactionDateBetweenOrderByTransactionDateDescIdDesc(fromDate, toDate);
+    }
+
     public DepositTransaction getById(Long id) {
         return depositTransactionRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Deposit transaction not found: " + id));

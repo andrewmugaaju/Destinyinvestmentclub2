@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Deposit Report</title>
+    <th:block th:replace="~{reports/pdf/fragments/pdf-style :: style}"></th:block>
+</head>
+<body>
+    <div class="letterhead">
+        <div class="brand-mark">DIC</div>
+        <div class="club-name">Destiny Investment Club</div>
+        <div class="report-title">Deposit Report</div>
+        <div class="meta">Period: <strong th:text="${fromDate}">2026-01-01</strong> to <strong th:text="${toDate}">2026-01-31</strong></div>
+    </div>
+
+    <table>
+        <thead>
+        <tr><th>Reference</th><th>Date</th><th>Member / Group</th><th>Savings Product</th><th class="money">Total</th><th>Posted By</th></tr>
+        </thead>
+        <tbody>
+        <tr th:each="d : ${deposits}">
+            <td th:text="${d.reference} + (${d.voided} ? ' (VOIDED)' : '')">-</td>
+            <td th:text="${d.transactionDate}">-</td>
+            <td th:text="${d.client != null ? d.client.fullName : (d.group != null ? d.group.groupName : '-')}">-</td>
+            <td th:text="${savingsProductByDepositId.get(d.id)} ?: '-'">-</td>
+            <td class="money" th:text="${#numbers.formatDecimal(d.totalAmount,1,'COMMA',2,'POINT')}">0.00</td>
+            <td th:text="${d.createdBy}">-</td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(deposits)}"><td colspan="6">No deposits in this period.</td></tr>
+        </tbody>
+    </table>
+
+    <div class="summary-box">
+        Total Deposited: <span th:text="${#numbers.formatDecimal(totalAmount,1,'COMMA',2,'POINT')}">0.00</span>
+    </div>
+
+    <div class="footer-note">
+        Generated <span th:text="${generatedAt}">-</span> by <span th:text="${generatedBy}">-</span>
+    </div>
+</body>
+</html>
