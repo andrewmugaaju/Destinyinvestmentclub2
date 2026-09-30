@@ -113,4 +113,32 @@ public class LoanAccountController {
         redirectAttributes.addFlashAttribute("successMessage", "Repayment recorded");
         return "redirect:/loan-accounts/" + id;
     }
+
+    @GetMapping("/transactions/{id}")
+    public String transactionView(@PathVariable Long id, Model model) {
+        model.addAttribute("txn", loanService.getTransaction(id));
+        return "loan-accounts/transaction-view";
+    }
+
+    @PostMapping("/transactions/{id}/edit")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    public String transactionEdit(@PathVariable Long id,
+                                   @RequestParam(required = false) String narration,
+                                   @AuthenticationPrincipal CustomUserDetails principal,
+                                   RedirectAttributes redirectAttributes) {
+        loanService.updateNarration(id, narration, principal.getUsername());
+        redirectAttributes.addFlashAttribute("successMessage", "Transaction updated");
+        return "redirect:/loan-accounts/transactions/" + id;
+    }
+
+    @PostMapping("/transactions/{id}/void")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    public String transactionVoid(@PathVariable Long id,
+                                   @RequestParam(required = false) String reason,
+                                   @AuthenticationPrincipal CustomUserDetails principal,
+                                   RedirectAttributes redirectAttributes) {
+        loanService.voidTransaction(id, principal.getUsername(), reason);
+        redirectAttributes.addFlashAttribute("successMessage", "Transaction voided");
+        return "redirect:/loan-accounts/transactions/" + id;
+    }
 }

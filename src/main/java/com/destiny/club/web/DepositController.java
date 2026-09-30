@@ -15,6 +15,7 @@ import com.destiny.club.service.GroupService;
 import com.destiny.club.service.LoanService;
 import com.destiny.club.service.SavingsService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -145,5 +146,27 @@ public class DepositController {
         var loan = loanService.getById(allocation.getTargetAccountId());
         return new DepositAllocationView(allocation.getAllocationType(), loan.getLoanAccountNumber(),
                 loan.getLoanProduct().getName(), allocation.getAmount());
+    }
+
+    @PostMapping("/{id}/edit")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    public String edit(@PathVariable Long id,
+                        @RequestParam(required = false) String narration,
+                        @AuthenticationPrincipal CustomUserDetails principal,
+                        RedirectAttributes redirectAttributes) {
+        depositService.updateNarration(id, narration, principal.getUsername());
+        redirectAttributes.addFlashAttribute("successMessage", "Deposit updated");
+        return "redirect:/deposits/" + id;
+    }
+
+    @PostMapping("/{id}/void")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    public String voidDeposit(@PathVariable Long id,
+                               @RequestParam(required = false) String reason,
+                               @AuthenticationPrincipal CustomUserDetails principal,
+                               RedirectAttributes redirectAttributes) {
+        depositService.voidDeposit(id, principal.getUsername(), reason);
+        redirectAttributes.addFlashAttribute("successMessage", "Deposit voided");
+        return "redirect:/deposits/" + id;
     }
 }

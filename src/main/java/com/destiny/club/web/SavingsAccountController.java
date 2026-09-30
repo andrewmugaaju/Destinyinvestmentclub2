@@ -7,6 +7,7 @@ import com.destiny.club.domain.savings.SavingsProduct;
 import com.destiny.club.security.CustomUserDetails;
 import com.destiny.club.service.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -133,5 +134,33 @@ public class SavingsAccountController {
         savingsService.withdraw(account, amount, transactionDate, narration, principal.getUsername(), cashAccount);
         redirectAttributes.addFlashAttribute("successMessage", "Withdrawal recorded");
         return "redirect:/savings-accounts/" + id;
+    }
+
+    @GetMapping("/transactions/{id}")
+    public String transactionView(@PathVariable Long id, Model model) {
+        model.addAttribute("txn", savingsService.getTransaction(id));
+        return "savings-accounts/transaction-view";
+    }
+
+    @PostMapping("/transactions/{id}/edit")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    public String transactionEdit(@PathVariable Long id,
+                                   @RequestParam(required = false) String narration,
+                                   @AuthenticationPrincipal CustomUserDetails principal,
+                                   RedirectAttributes redirectAttributes) {
+        savingsService.updateNarration(id, narration, principal.getUsername());
+        redirectAttributes.addFlashAttribute("successMessage", "Transaction updated");
+        return "redirect:/savings-accounts/transactions/" + id;
+    }
+
+    @PostMapping("/transactions/{id}/void")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    public String transactionVoid(@PathVariable Long id,
+                                   @RequestParam(required = false) String reason,
+                                   @AuthenticationPrincipal CustomUserDetails principal,
+                                   RedirectAttributes redirectAttributes) {
+        savingsService.voidTransaction(id, principal.getUsername(), reason);
+        redirectAttributes.addFlashAttribute("successMessage", "Transaction voided");
+        return "redirect:/savings-accounts/transactions/" + id;
     }
 }

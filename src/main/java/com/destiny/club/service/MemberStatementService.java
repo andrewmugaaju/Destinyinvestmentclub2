@@ -56,6 +56,9 @@ public class MemberStatementService {
 
             BigDecimal accountOpening = BigDecimal.ZERO;
             for (SavingsTransaction txn : txns) {
+                if (txn.isVoided()) {
+                    continue;
+                }
                 if (!txn.getTransactionDate().isBefore(fromDate)) {
                     break;
                 }
@@ -64,6 +67,12 @@ public class MemberStatementService {
             openingSavings = openingSavings.add(accountOpening);
 
             for (SavingsTransaction txn : txns) {
+                // Voided transactions never happened as far as the member's balance is concerned -
+                // they're excluded here entirely (they still show, marked VOIDED, in the account's
+                // own transaction history for audit purposes).
+                if (txn.isVoided()) {
+                    continue;
+                }
                 if (txn.getTransactionDate().isBefore(fromDate) || txn.getTransactionDate().isAfter(toDate)) {
                     continue;
                 }
@@ -72,8 +81,8 @@ public class MemberStatementService {
                 String description = "Savings " + humanize(txn.getTransactionType().name())
                         + (txn.getNarration() != null ? " - " + txn.getNarration() : "");
                 savingsRows.add(new MemberStatementRow(txn.getTransactionDate(), description,
-                        referenceFor(txn.getJournalEntryId(), referenceCache), txn.getJournalEntryId(), account.getAccountNumber(),
-                        signedAmount, null, null, null));
+                        referenceFor(txn.getJournalEntryId(), referenceCache), txn.getJournalEntryId(), txn.getCreatedBy(),
+                        account.getAccountNumber(), signedAmount, null, null, null));
             }
         }
 
@@ -93,6 +102,9 @@ public class MemberStatementService {
             BigDecimal accountOpening = BigDecimal.ZERO;
 
             for (LoanTransaction txn : txns) {
+                if (txn.isVoided()) {
+                    continue;
+                }
                 BigDecimal delta = loanBalanceDelta(txn, totalScheduledInterest);
 
                 if (txn.getTransactionDate().isBefore(fromDate)) {
@@ -107,8 +119,8 @@ public class MemberStatementService {
                 String description = "Loan " + humanize(txn.getTransactionType().name()) + " - " + loan.getLoanAccountNumber()
                         + (txn.getNarration() != null ? " - " + txn.getNarration() : "");
                 loanRows.add(new MemberStatementRow(txn.getTransactionDate(), description,
-                        referenceFor(txn.getJournalEntryId(), referenceCache), txn.getJournalEntryId(), loan.getLoanAccountNumber(),
-                        null, null, delta, null));
+                        referenceFor(txn.getJournalEntryId(), referenceCache), txn.getJournalEntryId(), txn.getCreatedBy(),
+                        loan.getLoanAccountNumber(), null, null, delta, null));
             }
             openingLoan = openingLoan.add(accountOpening);
         }
@@ -133,7 +145,7 @@ public class MemberStatementService {
                 runningLoan = runningLoan.add(row.getLoanAmount());
             }
             finalRows.add(new MemberStatementRow(row.getDate(), row.getDescription(), row.getReference(), row.getJournalEntryId(),
-                    row.getAccountNumber(), row.getSavingsAmount(), runningSavings, row.getLoanAmount(), runningLoan));
+                    row.getPostedBy(), row.getAccountNumber(), row.getSavingsAmount(), runningSavings, row.getLoanAmount(), runningLoan));
         }
 
         return new MemberStatementReport(client, fromDate, toDate, openingSavings, openingLoan,

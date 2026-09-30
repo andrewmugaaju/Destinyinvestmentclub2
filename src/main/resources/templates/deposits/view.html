@@ -1,28 +1,43 @@
-﻿<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head th:replace="~{fragments/head :: head(title='Deposit Details')}"></head>
 <body>
 <div th:replace="~{fragments/sidebar :: sidebar}"></div>
 <main class="container">
+    <div th:replace="~{fragments/alerts :: alerts}"></div>
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
         <h2 class="mb-0" th:text="${deposit.reference}">DEP-...</h2>
-        <a th:if="${deposit.journalEntryId != null}" class="btn btn-outline-secondary" th:href="@{/journal/{id}(id=${deposit.journalEntryId})}">
-            <i class="bi bi-journal-text"></i> View Journal Entry #<span th:text="${deposit.journalEntryId}">1</span>
-        </a>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge fs-6" th:classappend="${deposit.voided} ? 'bg-danger' : 'bg-success'" th:text="${deposit.voided} ? 'VOIDED' : 'ACTIVE'">ACTIVE</span>
+            <a th:if="${deposit.journalEntryId != null}" class="btn btn-outline-secondary" th:href="@{/journal/{id}(id=${deposit.journalEntryId})}">
+                <i class="bi bi-journal-text"></i> View Journal Entry #<span th:text="${deposit.journalEntryId}">1</span>
+            </a>
+        </div>
     </div>
     <div class="card p-3 mb-3">
         <div class="row">
             <div class="col-md-3"><strong>Date</strong><br/><span th:text="${deposit.transactionDate}">-</span></div>
             <div class="col-md-3"><strong>Member / Group</strong><br/><span th:text="${deposit.client != null ? deposit.client.fullName : (deposit.group != null ? deposit.group.groupName : '-')}">-</span></div>
             <div class="col-md-3"><strong>Total Amount</strong><br/><span th:text="${#numbers.formatDecimal(deposit.totalAmount,1,'COMMA',2,'POINT')}">0.00</span></div>
-            <div class="col-md-3"><strong>Recorded By</strong><br/><span th:text="${deposit.createdBy}">-</span></div>
+            <div class="col-md-3"><strong>Posted By</strong><br/><span th:text="${deposit.createdBy}">-</span></div>
         </div>
         <div class="row mt-2" th:if="${deposit.receiptNumber != null and !deposit.receiptNumber.isEmpty()}">
             <div class="col-md-3"><strong>Receipt / Reference</strong><br/><span th:text="${deposit.receiptNumber}">-</span></div>
         </div>
+        <div class="row mt-2" th:if="${deposit.voided}">
+            <div class="col-12">
+                <div class="alert alert-danger mb-0 py-2">
+                    Voided by <strong th:text="${deposit.voidedBy}">-</strong> on <span th:text="${deposit.voidedAt}">-</span>
+                    <span th:if="${deposit.voidReason != null and !deposit.voidReason.isEmpty()}"> - Reason: <span th:text="${deposit.voidReason}">-</span></span>
+                    <span th:if="${deposit.reversalJournalEntryId != null}"> (reversing entry
+                        <a th:href="@{/journal/{id}(id=${deposit.reversalJournalEntryId})}" th:text="'#' + ${deposit.reversalJournalEntryId}">#2</a>)
+                    </span>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="card p-3">
+    <div class="card p-3 mb-3">
         <h5>Allocation</h5>
         <table class="table table-sm">
             <thead><tr><th>Type</th><th>Account</th><th>Product</th><th class="money">Amount</th></tr></thead>
@@ -35,6 +50,37 @@
             </tr>
             </tbody>
         </table>
+    </div>
+
+    <div class="card p-3 mb-3" th:if="${!deposit.voided}" sec:authorize="hasAnyRole('ADMIN','MANAGER')">
+        <h5>Edit Narration</h5>
+        <form th:action="@{/deposits/{id}/edit(id=${deposit.id})}" method="post" class="row g-2 align-items-end">
+            <div class="col-md-8">
+                <input type="text" class="form-control" name="narration" th:value="${deposit.narration}"/>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-outline-primary w-100">Save</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="card p-3" th:if="${!deposit.voided}" sec:authorize="hasAnyRole('ADMIN','MANAGER')">
+        <h5>Void This Deposit</h5>
+        <p class="text-muted small">
+            This reverses the whole combined receipt at once - the cash, savings, shares and loan repayment legs
+            together - and recalculates every affected account. The original stays in the history, marked voided,
+            rather than being deleted.
+        </p>
+        <form th:action="@{/deposits/{id}/void(id=${deposit.id})}" method="post"
+              onsubmit="return confirm('Void this whole deposit? This cannot be undone.');" class="row g-2 align-items-end">
+            <div class="col-md-8">
+                <label class="form-label">Reason</label>
+                <input type="text" class="form-control" name="reason" placeholder="e.g. entered in error" required/>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-outline-danger w-100">Void Deposit</button>
+            </div>
+        </form>
     </div>
 </main>
 </body>

@@ -13,8 +13,11 @@
         <table class="table table-hover">
             <thead><tr><th>Reference</th><th>Date</th><th>Member / Group</th><th class="money">Total</th><th>Recorded By</th><th>Journal</th><th></th></tr></thead>
             <tbody>
-            <tr th:each="d : ${deposits}">
-                <td th:text="${d.reference}">DEP-...</td>
+            <tr th:each="d : ${deposits}" th:classappend="${d.voided} ? 'text-muted' : ''">
+                <td>
+                    <span th:text="${d.reference}">DEP-...</span>
+                    <span th:if="${d.voided}" class="badge bg-danger ms-1">VOIDED</span>
+                </td>
                 <td th:text="${d.transactionDate}">-</td>
                 <td th:text="${d.client != null ? d.client.fullName : (d.group != null ? d.group.groupName : '-')}">-</td>
                 <td class="money" th:text="${#numbers.formatDecimal(d.totalAmount,1,'COMMA',2,'POINT')}">0.00</td>

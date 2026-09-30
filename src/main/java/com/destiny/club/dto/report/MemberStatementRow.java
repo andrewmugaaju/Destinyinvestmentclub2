@@ -13,6 +13,7 @@ public class MemberStatementRow {
     private final String description;
     private final String reference;
     private final Long journalEntryId;
+    private final String postedBy;
     private final String accountNumber;
     /** Positive for a savings deposit, negative for a withdrawal, null if this row is a loan movement. */
     private final BigDecimal savingsAmount;

@@ -190,4 +190,50 @@ public class DepositService {
 
         return depositTransactionRepository.save(deposit);
     }
+
+    @Transactional
+    public DepositTransaction updateNarration(Long depositId, String narration, String updatedBy) {
+        DepositTransaction deposit = getById(depositId);
+        if (deposit.isVoided()) {
+            throw new BusinessException("Cannot edit a voided deposit");
+        }
+        deposit.setNarration(narration);
+        return depositTransactionRepository.save(deposit);
+    }
+
+    /**
+     * Voids a whole combined-deposit receipt: reverses its single combined journal entry (which
+     * covers cash, savings, shares and loan repayment together), then voids each of its savings
+     * and loan repayment legs so their own account/loan balances are recomputed too. Share
+     * purchase legs have no separate ledger row - the journal reversal alone undoes them.
+     */
+    @Transactional
+    public DepositTransaction voidDeposit(Long depositId, String voidedBy, String reason) {
+        DepositTransaction deposit = getById(depositId);
+        if (deposit.isVoided()) {
+            throw new BusinessException("This deposit has already been voided");
+        }
+
+        if (deposit.getJournalEntryId() != null) {
+            var reversal = accountingService.reverseEntry(deposit.getJournalEntryId(), LocalDate.now(), reason, voidedBy);
+            deposit.setReversalJournalEntryId(reversal.getId());
+        }
+
+        for (SavingsTransaction txn : savingsService.findByDepositTransaction(deposit.getId())) {
+            if (!txn.isVoided()) {
+                savingsService.voidSubTransaction(txn.getId(), voidedBy, reason);
+            }
+        }
+        for (LoanTransaction txn : loanService.findByDepositTransaction(deposit.getId())) {
+            if (!txn.isVoided()) {
+                loanService.voidSubTransaction(txn.getId(), voidedBy, reason);
+            }
+        }
+
+        deposit.setVoided(true);
+        deposit.setVoidedBy(voidedBy);
+        deposit.setVoidedAt(java.time.LocalDateTime.now());
+        deposit.setVoidReason(reason);
+        return depositTransactionRepository.save(deposit);
+    }
 }

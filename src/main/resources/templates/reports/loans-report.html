@@ -51,24 +51,29 @@
     <div class="card p-3">
         <table class="table table-sm table-report">
             <thead>
-            <tr><th>Date</th><th>Loan #</th><th>Borrower</th><th>Product</th><th>Type</th><th class="money">Amount</th><th class="money">Principal</th><th class="money">Interest</th><th>Journal</th></tr>
+            <tr><th>Date</th><th>Loan #</th><th>Borrower</th><th>Product</th><th>Type</th><th class="money">Amount</th><th class="money">Principal</th><th class="money">Interest</th><th>Posted By</th><th>Journal</th><th></th></tr>
             </thead>
             <tbody>
-            <tr th:each="t : ${transactions}">
+            <tr th:each="t : ${transactions}" th:classappend="${t.voided} ? 'text-muted' : ''">
                 <td th:text="${t.transactionDate}">-</td>
                 <td><a th:href="@{/loan-accounts/{id}(id=${t.loanAccount.id})}" th:text="${t.loanAccount.loanAccountNumber}">LN000001</a></td>
                 <td th:text="${t.loanAccount.borrowerName}">-</td>
                 <td th:text="${t.loanAccount.loanProduct.name}">-</td>
-                <td><span class="badge" th:classappend="${t.transactionType.name() == 'DISBURSEMENT'} ? 'bg-primary' : 'bg-success'" th:text="${t.transactionType}">-</span></td>
+                <td>
+                    <span class="badge" th:classappend="${t.transactionType.name() == 'DISBURSEMENT'} ? 'bg-primary' : 'bg-success'" th:text="${t.transactionType}">-</span>
+                    <span th:if="${t.voided}" class="badge bg-danger">VOIDED</span>
+                </td>
                 <td class="money" th:text="${#numbers.formatDecimal(t.amount,1,'COMMA',2,'POINT')}">0.00</td>
                 <td class="money" th:text="${#numbers.formatDecimal(t.principalPortion,1,'COMMA',2,'POINT')}">0.00</td>
                 <td class="money" th:text="${#numbers.formatDecimal(t.interestPortion,1,'COMMA',2,'POINT')}">0.00</td>
+                <td th:text="${t.createdBy}">-</td>
                 <td>
                     <a th:if="${t.journalEntryId != null}" class="btn btn-sm btn-outline-secondary" th:href="@{/journal/{id}(id=${t.journalEntryId})}" th:text="'#' + ${t.journalEntryId}">#1</a>
                     <span th:if="${t.journalEntryId == null}">-</span>
                 </td>
+                <td><a class="btn btn-sm btn-outline-primary" th:href="@{/loan-accounts/transactions/{id}(id=${t.id})}">View</a></td>
             </tr>
-            <tr th:if="${#lists.isEmpty(transactions)}"><td colspan="9" class="text-muted">No loan transactions in this period.</td></tr>
+            <tr th:if="${#lists.isEmpty(transactions)}"><td colspan="11" class="text-muted">No loan transactions in this period.</td></tr>
             </tbody>
         </table>
     </div>

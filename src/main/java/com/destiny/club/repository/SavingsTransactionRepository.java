@@ -9,4 +9,6 @@ import java.util.List;
 public interface SavingsTransactionRepository extends JpaRepository<SavingsTransaction, Long> {
     List<SavingsTransaction> findBySavingsAccountIdOrderByTransactionDateDescIdDesc(Long savingsAccountId);
     List<SavingsTransaction> findByTransactionDateBetweenOrderByTransactionDateAscIdAsc(LocalDate fromDate, LocalDate toDate);
+    List<SavingsTransaction> findBySavingsAccountIdOrderByTransactionDateAscIdAsc(Long savingsAccountId);
+    List<SavingsTransaction> findByDepositTransactionId(Long depositTransactionId);
 }

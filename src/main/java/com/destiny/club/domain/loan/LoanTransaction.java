@@ -52,4 +52,18 @@ public class LoanTransaction {
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(nullable = false)
+    private boolean voided = false;
+
+    @Column(length = 60)
+    private String voidedBy;
+
+    private LocalDateTime voidedAt;
+
+    @Column(length = 250)
+    private String voidReason;
+
+    /** The reversing journal entry posted when this was voided, if it had its own entry to reverse. */
+    private Long reversalJournalEntryId;
 }

@@ -42,7 +42,7 @@
         <tr>
             <th>Date</th><th>Description</th><th>Reference</th>
             <th class="money">Savings</th><th class="money">Savings Bal.</th>
-            <th class="money">Loan</th><th class="money">Loan Bal.</th>
+            <th class="money">Loan</th><th class="money">Loan Bal.</th><th>Posted By</th>
         </tr>
         </thead>
         <tbody>
@@ -54,8 +54,9 @@
             <td class="money" th:text="${#numbers.formatDecimal(r.savingsBalance,1,'COMMA',2,'POINT')}">0.00</td>
             <td class="money" th:text="${r.loanAmount != null} ? ${#numbers.formatDecimal(r.loanAmount,1,'COMMA',2,'POINT')} : ''"></td>
             <td class="money" th:text="${#numbers.formatDecimal(r.loanBalance,1,'COMMA',2,'POINT')}">0.00</td>
+            <td th:text="${r.postedBy}">-</td>
         </tr>
-        <tr th:if="${#lists.isEmpty(report.rows)}"><td colspan="7">No savings or loan movement in this period.</td></tr>
+        <tr th:if="${#lists.isEmpty(report.rows)}"><td colspan="8">No savings or loan movement in this period.</td></tr>
         </tbody>
     </table>
 

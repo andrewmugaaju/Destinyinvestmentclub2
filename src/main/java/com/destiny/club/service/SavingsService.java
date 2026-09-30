@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -162,5 +163,94 @@ public class SavingsService {
                 ));
         txn.setJournalEntryId(entry.getId());
         return savingsTransactionRepository.save(txn);
+    }
+
+    public List<SavingsTransaction> findByDepositTransaction(Long depositTransactionId) {
+        return savingsTransactionRepository.findByDepositTransactionId(depositTransactionId);
+    }
+
+    public SavingsTransaction getTransaction(Long transactionId) {
+        return savingsTransactionRepository.findById(transactionId)
+                .orElseThrow(() -> new NotFoundException("Savings transaction not found: " + transactionId));
+    }
+
+    @Transactional
+    public SavingsTransaction updateNarration(Long transactionId, String narration, String updatedBy) {
+        SavingsTransaction txn = getTransaction(transactionId);
+        if (txn.isVoided()) {
+            throw new BusinessException("Cannot edit a voided transaction");
+        }
+        txn.setNarration(narration);
+        return savingsTransactionRepository.save(txn);
+    }
+
+    /**
+     * Voids a stand-alone savings transaction (one with its own journal entry): posts a
+     * reversing journal entry, then recomputes the account's balance and every later
+     * transaction's running balance from its remaining non-voided history.
+     */
+    @Transactional
+    public SavingsTransaction voidTransaction(Long transactionId, String voidedBy, String reason) {
+        SavingsTransaction txn = getTransaction(transactionId);
+        if (txn.isVoided()) {
+            throw new BusinessException("This transaction has already been voided");
+        }
+        if (txn.getDepositTransactionId() != null) {
+            throw new BusinessException("This transaction is part of a combined deposit - void the deposit instead");
+        }
+        if (txn.getJournalEntryId() != null) {
+            var reversal = accountingService.reverseEntry(txn.getJournalEntryId(), LocalDate.now(), reason, voidedBy);
+            txn.setReversalJournalEntryId(reversal.getId());
+        }
+        markVoided(txn, voidedBy, reason);
+        recomputeAccount(txn.getSavingsAccount());
+        return txn;
+    }
+
+    /**
+     * Voids the savings leg of a combined deposit. No journal reversal happens here - the parent
+     * deposit posts one combined reversing entry covering every leg (savings, shares, loan) at once.
+     */
+    @Transactional
+    public SavingsTransaction voidSubTransaction(Long transactionId, String voidedBy, String reason) {
+        SavingsTransaction txn = getTransaction(transactionId);
+        if (txn.isVoided()) {
+            throw new BusinessException("This transaction has already been voided");
+        }
+        markVoided(txn, voidedBy, reason);
+        recomputeAccount(txn.getSavingsAccount());
+        return txn;
+    }
+
+    private void markVoided(SavingsTransaction txn, String voidedBy, String reason) {
+        txn.setVoided(true);
+        txn.setVoidedBy(voidedBy);
+        txn.setVoidedAt(LocalDateTime.now());
+        txn.setVoidReason(reason);
+        savingsTransactionRepository.save(txn);
+    }
+
+    /**
+     * Recomputes the account's balance and every transaction's running balance by replaying its
+     * non-voided history in date order - so voiding any past transaction (not just the latest)
+     * still leaves every later balance correct.
+     */
+    @Transactional
+    public void recomputeAccount(SavingsAccount account) {
+        List<SavingsTransaction> txns = savingsTransactionRepository
+                .findBySavingsAccountIdOrderByTransactionDateAscIdAsc(account.getId());
+        BigDecimal balance = BigDecimal.ZERO;
+        for (SavingsTransaction txn : txns) {
+            if (txn.isVoided()) {
+                continue;
+            }
+            balance = txn.getTransactionType() == SavingsTransactionType.DEPOSIT
+                    ? balance.add(txn.getAmount())
+                    : balance.subtract(txn.getAmount());
+            txn.setRunningBalance(balance);
+            savingsTransactionRepository.save(txn);
+        }
+        account.setBalance(balance);
+        savingsAccountRepository.save(account);
     }
 }

@@ -97,6 +97,30 @@ public class AccountingService {
         return journalEntryRepository.save(entry);
     }
 
+    /**
+     * Posts a new journal entry that exactly reverses an existing one (every line's debit/credit
+     * flipped, same accounts and amounts), so that voiding a transaction never rewrites or deletes
+     * the original posting - it stays in the ledger, offset by this correcting entry, preserving a
+     * full audit trail.
+     */
+    @Transactional
+    public JournalEntry reverseEntry(Long originalEntryId, LocalDate reversalDate, String reason, String createdBy) {
+        JournalEntry original = journalEntryRepository.findById(originalEntryId)
+                .orElseThrow(() -> new NotFoundException("Journal entry not found: " + originalEntryId));
+
+        List<JournalEntryLine> reversedLines = new ArrayList<>();
+        for (JournalEntryLine line : original.getLines()) {
+            JournalEntryLine reversed = line.getEntryType() == EntryType.CREDIT
+                    ? JournalEntryLine.debit(line.getGlAccount(), line.getAmount(), line.getNarration())
+                    : JournalEntryLine.credit(line.getGlAccount(), line.getAmount(), line.getNarration());
+            reversed.setClientId(line.getClientId());
+            reversedLines.add(reversed);
+        }
+
+        String description = "Reversal of " + original.getReference() + (reason != null && !reason.isBlank() ? " - " + reason : "");
+        return post(reversalDate, "REVERSAL", original.getId(), description, createdBy, reversedLines);
+    }
+
     public List<JournalEntry> recentEntries() {
         return journalEntryRepository.findRecent();
     }

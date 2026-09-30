@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/head :: head(title='Loan Transaction')}"></head>
+<body>
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+<main class="container">
+    <div th:replace="~{fragments/alerts :: alerts}"></div>
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <h2 class="mb-0">Loan Transaction #<span th:text="${txn.id}">1</span></h2>
+        <span class="badge fs-6" th:classappend="${txn.voided} ? 'bg-danger' : 'bg-success'" th:text="${txn.voided} ? 'VOIDED' : 'ACTIVE'">ACTIVE</span>
+    </div>
+
+    <div class="card p-3 mb-3">
+        <div class="row">
+            <div class="col-md-3"><strong>Loan</strong><br/><a th:href="@{/loan-accounts/{id}(id=${txn.loanAccount.id})}" th:text="${txn.loanAccount.loanAccountNumber}">LN000001</a></div>
+            <div class="col-md-3"><strong>Borrower</strong><br/><span th:text="${txn.loanAccount.borrowerName}">-</span></div>
+            <div class="col-md-2"><strong>Date</strong><br/><span th:text="${txn.transactionDate}">-</span></div>
+            <div class="col-md-2"><strong>Type</strong><br/><span th:text="${txn.transactionType}">-</span></div>
+            <div class="col-md-2"><strong>Posted By</strong><br/><span th:text="${txn.createdBy}">-</span></div>
+        </div>
+        <div class="row mt-2">
+            <div class="col-md-3"><strong>Amount</strong><br/><span th:text="${#numbers.formatDecimal(txn.amount,1,'COMMA',2,'POINT')}">0.00</span></div>
+            <div class="col-md-2"><strong>Principal</strong><br/><span th:text="${#numbers.formatDecimal(txn.principalPortion,1,'COMMA',2,'POINT')}">0.00</span></div>
+            <div class="col-md-2"><strong>Interest</strong><br/><span th:text="${#numbers.formatDecimal(txn.interestPortion,1,'COMMA',2,'POINT')}">0.00</span></div>
+            <div class="col-md-2"><strong>Narration</strong><br/><span th:text="${txn.narration} ?: '-'">-</span></div>
+            <div class="col-md-3"><strong>Journal Entry</strong><br/>
+                <a th:if="${txn.journalEntryId != null}" th:href="@{/journal/{id}(id=${txn.journalEntryId})}" th:text="'#' + ${txn.journalEntryId}">#1</a>
+                <span th:if="${txn.journalEntryId == null}">-</span>
+            </div>
+        </div>
+        <div class="row mt-2" th:if="${txn.depositTransactionId != null}">
+            <div class="col-md-6">
+                <div class="alert alert-info mb-0 py-2">
+                    This transaction is part of combined
+                    <a th:href="@{/deposits/{id}(id=${txn.depositTransactionId})}">Deposit #<span th:text="${txn.depositTransactionId}">1</span></a>
+                    - edit or void it from there.
+                </div>
+            </div>
+        </div>
+        <div class="row mt-2" th:if="${txn.voided}">
+            <div class="col-12">
+                <div class="alert alert-danger mb-0 py-2">
+                    Voided by <strong th:text="${txn.voidedBy}">-</strong> on <span th:text="${txn.voidedAt}">-</span>
+                    <span th:if="${txn.voidReason != null and !txn.voidReason.isEmpty()}"> - Reason: <span th:text="${txn.voidReason}">-</span></span>
+                    <span th:if="${txn.reversalJournalEntryId != null}"> (reversing entry
+                        <a th:href="@{/journal/{id}(id=${txn.reversalJournalEntryId})}" th:text="'#' + ${txn.reversalJournalEntryId}">#2</a>)
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card p-3 mb-3" th:if="${!txn.voided and txn.depositTransactionId == null}" sec:authorize="hasAnyRole('ADMIN','MANAGER')">
+        <h5>Edit Narration</h5>
+        <form th:action="@{/loan-accounts/transactions/{id}/edit(id=${txn.id})}" method="post" class="row g-2 align-items-end">
+            <div class="col-md-8">
+                <input type="text" class="form-control" name="narration" th:value="${txn.narration}"/>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-outline-primary w-100">Save</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="card p-3" th:if="${!txn.voided and txn.depositTransactionId == null}" sec:authorize="hasAnyRole('ADMIN','MANAGER')">
+        <h5>Void This Transaction</h5>
+        <p class="text-muted small">
+            This posts a reversing journal entry and recalculates the loan's outstanding balances and repayment
+            schedule - the original transaction stays in the history, marked voided, rather than being deleted.
+            A disbursement can only be voided once every repayment against it has been voided first.
+        </p>
+        <form th:action="@{/loan-accounts/transactions/{id}/void(id=${txn.id})}" method="post"
+              onsubmit="return confirm('Void this transaction? This cannot be undone.');" class="row g-2 align-items-end">
+            <div class="col-md-8">
+                <label class="form-label">Reason</label>
+                <input type="text" class="form-control" name="reason" placeholder="e.g. entered in error" required/>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-outline-danger w-100">Void Transaction</button>
+            </div>
+        </form>
+    </div>
+</main>
+</body>
+</html>
