@@ -1,8 +1,10 @@
 package com.destiny.club.web;
 
+import com.destiny.club.domain.client.Client;
 import com.destiny.club.domain.deposit.AllocationType;
 import com.destiny.club.domain.deposit.DepositAllocation;
 import com.destiny.club.domain.deposit.DepositTransaction;
+import com.destiny.club.domain.savings.SavingsAccount;
 import com.destiny.club.domain.savings.SavingsAccountStatus;
 import com.destiny.club.dto.DepositAllocationForm;
 import com.destiny.club.dto.DepositAllocationView;
@@ -13,6 +15,7 @@ import com.destiny.club.service.ClientService;
 import com.destiny.club.service.DepositService;
 import com.destiny.club.service.GroupService;
 import com.destiny.club.service.LoanService;
+import com.destiny.club.service.SavingsProductService;
 import com.destiny.club.service.SavingsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -27,6 +30,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Controller
 @RequiredArgsConstructor
@@ -37,6 +42,7 @@ public class DepositController {
     private final ClientService clientService;
     private final GroupService groupService;
     private final SavingsService savingsService;
+    private final SavingsProductService savingsProductService;
     private final LoanService loanService;
     private final AccountingService accountingService;
 
@@ -55,20 +61,25 @@ public class DepositController {
         model.addAttribute("selectedClientId", clientId);
         model.addAttribute("selectedGroupId", groupId);
         model.addAttribute("cashAccounts", accountingService.findCashAccounts());
+        // Savings products drive the split, same as the Savings Deposit screen: pick a product,
+        // and if there's no active account under it yet, one is opened automatically on submit -
+        // there is no separate "open an account" step.
+        model.addAttribute("savingsProducts", savingsProductService.findActive());
 
         String selectedMemberLabel = null;
         if (clientId != null) {
-            model.addAttribute("savingsAccounts", filterActive(savingsService.findByClient(clientId)));
+            List<SavingsAccount> existing = filterActive(savingsService.findByClient(clientId));
+            Map<Long, SavingsAccount> existingByProductId = existing.stream()
+                    .collect(Collectors.toMap(a -> a.getSavingsProduct().getId(), a -> a, (a, b) -> a));
+            model.addAttribute("existingByProductId", existingByProductId);
             model.addAttribute("loanAccounts", loanService.findActiveByClient(clientId));
             var client = clientService.getById(clientId);
             selectedMemberLabel = client.getFullName() + " (" + client.getClientNumber() + ")";
         } else if (groupId != null) {
             // Groups no longer have their own savings accounts - only loan repayments and shares apply.
-            model.addAttribute("savingsAccounts", Collections.emptyList());
             model.addAttribute("loanAccounts", loanService.findActiveByGroup(groupId));
             selectedMemberLabel = groupService.getById(groupId).getGroupName() + " (Group)";
         } else {
-            model.addAttribute("savingsAccounts", Collections.emptyList());
             model.addAttribute("loanAccounts", Collections.emptyList());
         }
         model.addAttribute("selectedMemberLabel", selectedMemberLabel);
@@ -87,7 +98,7 @@ public class DepositController {
                         @RequestParam BigDecimal totalAmount,
                         @RequestParam(required = false) String receiptNumber,
                         @RequestParam(required = false) String narration,
-                        @RequestParam(required = false) Long savingsAccountId,
+                        @RequestParam(required = false) Long savingsProductId,
                         @RequestParam(required = false) BigDecimal savingsAmount,
                         @RequestParam(required = false) BigDecimal sharesAmount,
                         @RequestParam(required = false) Long loanAccountId,
@@ -104,10 +115,15 @@ public class DepositController {
         form.setNarration(narration);
 
         List<DepositAllocationForm> allocations = new ArrayList<>();
-        if (savingsAccountId != null && savingsAmount != null && savingsAmount.compareTo(BigDecimal.ZERO) > 0) {
+        if (savingsProductId != null && savingsAmount != null && savingsAmount.compareTo(BigDecimal.ZERO) > 0) {
+            // No separate "open an account" step - if the client doesn't already have an active
+            // account under this product, one is opened automatically as part of the deposit.
+            Client client = clientService.getById(clientId);
+            var product = savingsProductService.getById(savingsProductId);
+            SavingsAccount account = savingsService.findOrOpenAccount(client, product);
             DepositAllocationForm a = new DepositAllocationForm();
             a.setAllocationType(AllocationType.SAVINGS_DEPOSIT);
-            a.setTargetAccountId(savingsAccountId);
+            a.setTargetAccountId(account.getId());
             a.setAmount(savingsAmount);
             allocations.add(a);
         }
