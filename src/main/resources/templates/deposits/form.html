@@ -16,19 +16,16 @@
             <div class="row g-3 mb-4">
                 <div class="col-md-4">
                     <label class="form-label">Member <span class="text-danger">*</span></label>
-                    <select class="form-select" onchange="onMemberChange(this)">
-                        <option value="">-- Select member --</option>
-                        <optgroup label="Clients">
-                            <option th:each="c : ${clients}" th:value="'C-' + ${c.id}"
-                                    th:selected="${selectedClientId != null and selectedClientId == c.id}"
-                                    th:text="${c.fullName} + ' (' + ${c.clientNumber} + ')'"></option>
-                        </optgroup>
-                        <optgroup label="Groups">
-                            <option th:each="g : ${groups}" th:value="'G-' + ${g.id}"
-                                    th:selected="${selectedGroupId != null and selectedGroupId == g.id}"
-                                    th:text="${g.groupName}"></option>
-                        </optgroup>
-                    </select>
+                    <input type="text" class="form-control" id="memberSearch" list="memberOptions"
+                           placeholder="Search by name or client #..." autocomplete="off"
+                           th:value="${selectedMemberLabel}" oninput="onMemberSearchInput(this)"/>
+                    <datalist id="memberOptions">
+                        <option th:each="c : ${clients}" th:value="${c.fullName} + ' (' + ${c.clientNumber} + ')'"
+                                th:attr="data-type='C',data-id=${c.id}"></option>
+                        <option th:each="g : ${groups}" th:value="${g.groupName} + ' (Group)'"
+                                th:attr="data-type='G',data-id=${g.id}"></option>
+                    </datalist>
+                    <div class="form-text" th:if="${selectedClientId == null and selectedGroupId == null}">Type a client name or client # (e.g. CL00001) and pick a match.</div>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Date <span class="text-danger">*</span></label>
@@ -137,14 +134,21 @@
     </div>
 
     <script>
-        function onMemberChange(sel) {
-            var val = sel.value;
-            var url = '/deposits/new';
-            if (val.indexOf('C-') === 0) {
-                url += '?clientId=' + encodeURIComponent(val.slice(2));
-            } else if (val.indexOf('G-') === 0) {
-                url += '?groupId=' + encodeURIComponent(val.slice(2));
+        function onMemberSearchInput(el) {
+            var options = document.querySelectorAll('#memberOptions option');
+            var match = null;
+            for (var i = 0; i < options.length; i++) {
+                if (options[i].value === el.value) {
+                    match = options[i];
+                    break;
+                }
             }
+            if (!match) {
+                return;
+            }
+            var type = match.getAttribute('data-type');
+            var id = match.getAttribute('data-id');
+            var url = '/deposits/new?' + (type === 'C' ? 'clientId=' : 'groupId=') + encodeURIComponent(id);
             window.location.href = url;
         }
 

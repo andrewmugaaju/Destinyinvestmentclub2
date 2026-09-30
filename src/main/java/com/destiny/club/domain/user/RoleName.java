@@ -4,5 +4,6 @@ public enum RoleName {
     ADMIN,
     MANAGER,
     ACCOUNTANT,
-    TELLER
+    TELLER,
+    LOAN_OFFICER
 }

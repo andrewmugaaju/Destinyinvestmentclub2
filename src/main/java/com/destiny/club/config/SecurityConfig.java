@@ -13,6 +13,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 
 @Configuration
 @EnableWebSecurity
@@ -40,6 +41,23 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
+    /** Sends a Loan Officer straight to the Deposit Screen on login - the only page they can use - and everyone else to the dashboard as before. */
+    @Bean
+    public AuthenticationSuccessHandler loanOfficerAwareSuccessHandler() {
+        return (request, response, authentication) -> {
+            boolean isLoanOfficer = authentication.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_LOAN_OFFICER"));
+            response.sendRedirect(isLoanOfficer ? "/deposits/new" : "/dashboard");
+        };
+    }
+
+    /**
+     * Every role except LOAN_OFFICER - used as the "everything else" set so a Loan Officer's
+     * access stays limited to exactly what's explicitly granted below (the Deposit Screen),
+     * rather than falling through to a broad "any authenticated user" default.
+     */
+    private static final String[] NON_LOAN_OFFICER_ROLES = {"ADMIN", "MANAGER", "ACCOUNTANT", "TELLER"};
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
@@ -48,16 +66,18 @@ public class SecurityConfig {
                         .requestMatchers("/users/**").hasRole("ADMIN")
                         .requestMatchers("/reports/member-statement/**", "/reports/member-statement",
                                 "/reports/loans/**", "/reports/loans", "/reports/savings/**", "/reports/savings",
-                                "/reports/savings-withdrawals/**", "/reports/savings-withdrawals").authenticated()
+                                "/reports/savings-withdrawals/**", "/reports/savings-withdrawals").hasAnyRole(NON_LOAN_OFFICER_ROLES)
                         .requestMatchers("/reports/**").hasAnyRole("ADMIN", "MANAGER", "ACCOUNTANT")
                         .requestMatchers("/journal/**").hasAnyRole("ADMIN", "ACCOUNTANT")
                         .requestMatchers("/gl-accounts/**").hasAnyRole("ADMIN", "ACCOUNTANT")
                         .requestMatchers("/savings-products/**", "/loan-products/**").hasAnyRole("ADMIN", "MANAGER")
-                        .anyRequest().authenticated()
+                        // A Loan Officer's one and only allowed area: the Deposit Screen.
+                        .requestMatchers("/deposits/**").authenticated()
+                        .anyRequest().hasAnyRole(NON_LOAN_OFFICER_ROLES)
                 )
                 .formLogin(form -> form
                         .loginPage("/login")
-                        .defaultSuccessUrl("/dashboard", true)
+                        .successHandler(loanOfficerAwareSuccessHandler())
                         .permitAll()
                 )
                 .logout(logout -> logout

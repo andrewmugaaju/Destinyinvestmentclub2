@@ -56,17 +56,22 @@ public class DepositController {
         model.addAttribute("selectedGroupId", groupId);
         model.addAttribute("cashAccounts", accountingService.findCashAccounts());
 
+        String selectedMemberLabel = null;
         if (clientId != null) {
             model.addAttribute("savingsAccounts", filterActive(savingsService.findByClient(clientId)));
             model.addAttribute("loanAccounts", loanService.findActiveByClient(clientId));
+            var client = clientService.getById(clientId);
+            selectedMemberLabel = client.getFullName() + " (" + client.getClientNumber() + ")";
         } else if (groupId != null) {
             // Groups no longer have their own savings accounts - only loan repayments and shares apply.
             model.addAttribute("savingsAccounts", Collections.emptyList());
             model.addAttribute("loanAccounts", loanService.findActiveByGroup(groupId));
+            selectedMemberLabel = groupService.getById(groupId).getGroupName() + " (Group)";
         } else {
             model.addAttribute("savingsAccounts", Collections.emptyList());
             model.addAttribute("loanAccounts", Collections.emptyList());
         }
+        model.addAttribute("selectedMemberLabel", selectedMemberLabel);
         return "deposits/form";
     }
 
