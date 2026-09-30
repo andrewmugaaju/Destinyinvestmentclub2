@@ -4,9 +4,12 @@ import com.destiny.club.domain.accounting.*;
 import com.destiny.club.dto.report.*;
 import com.destiny.club.exception.BusinessException;
 import com.destiny.club.exception.NotFoundException;
+import com.destiny.club.repository.DepositTransactionRepository;
 import com.destiny.club.repository.GLAccountRepository;
 import com.destiny.club.repository.JournalEntryLineRepository;
 import com.destiny.club.repository.JournalEntryRepository;
+import com.destiny.club.repository.LoanTransactionRepository;
+import com.destiny.club.repository.SavingsTransactionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +32,9 @@ public class AccountingService {
     private final GLAccountRepository glAccountRepository;
     private final JournalEntryRepository journalEntryRepository;
     private final JournalEntryLineRepository journalEntryLineRepository;
+    private final SavingsTransactionRepository savingsTransactionRepository;
+    private final LoanTransactionRepository loanTransactionRepository;
+    private final DepositTransactionRepository depositTransactionRepository;
 
     private static final DateTimeFormatter REF_FORMAT = DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS");
 
@@ -293,6 +299,7 @@ public class AccountingService {
             rows.add(new LedgerRow(
                     entry.getTransactionDate(),
                     entry.getReference(),
+                    transactionPersonName(entry),
                     line.getNarration() != null ? line.getNarration() : entry.getDescription(),
                     sourceTypeLabel(entry.getSourceType()),
                     transactionViewUrl(entry),
@@ -347,5 +354,34 @@ public class AccountingService {
             }
         }
         return "/journal/" + entry.getId();
+    }
+
+    /**
+     * The member/group a General Ledger entry was posted for, looked up from whichever
+     * transaction actually created it - so the ledger reads as "Jane Mukasa" rather than a
+     * machine-generated reference code. A reversal traces back to the person on the entry it
+     * reversed. Null for entries with no single owner (manual journals).
+     */
+    private String transactionPersonName(JournalEntry entry) {
+        Long sourceId = entry.getSourceId();
+        if (sourceId == null) {
+            return null;
+        }
+        return switch (entry.getSourceType()) {
+            case "SAVINGS_DEPOSIT", "SAVINGS_WITHDRAWAL" -> savingsTransactionRepository.findById(sourceId)
+                    .map(t -> t.getSavingsAccount().getOwnerName())
+                    .orElse(null);
+            case "LOAN_DISBURSEMENT", "LOAN_REPAYMENT" -> loanTransactionRepository.findById(sourceId)
+                    .map(t -> t.getLoanAccount().getBorrowerName())
+                    .orElse(null);
+            case "DEPOSIT_TRANSACTION" -> depositTransactionRepository.findById(sourceId)
+                    .map(d -> d.getClient() != null ? d.getClient().getFullName()
+                            : (d.getGroup() != null ? d.getGroup().getGroupName() : null))
+                    .orElse(null);
+            case "REVERSAL" -> journalEntryRepository.findById(sourceId)
+                    .map(this::transactionPersonName)
+                    .orElse(null);
+            default -> null;
+        };
     }
 }

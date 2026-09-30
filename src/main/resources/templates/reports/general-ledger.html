@@ -47,7 +47,7 @@
             <tr th:each="r : ${report.rows}">
                 <td th:text="${r.date}">-</td>
                 <td><span class="badge bg-secondary" th:text="${r.typeLabel}">-</span></td>
-                <td th:text="${r.reference}">-</td>
+                <td th:text="${r.personName} ?: ${r.reference}">-</td>
                 <td th:text="${r.description}">-</td>
                 <td class="money" th:text="${r.debit.signum() != 0} ? ${#numbers.formatDecimal(r.debit,1,'COMMA',2,'POINT')} : ''"></td>
                 <td class="money" th:text="${r.credit.signum() != 0} ? ${#numbers.formatDecimal(r.credit,1,'COMMA',2,'POINT')} : ''"></td>

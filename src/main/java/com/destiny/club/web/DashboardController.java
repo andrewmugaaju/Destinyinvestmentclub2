@@ -1,6 +1,5 @@
 package com.destiny.club.web;
 
-import com.destiny.club.domain.accounting.GLCodes;
 import com.destiny.club.domain.loan.LoanStatus;
 import com.destiny.club.repository.ClientRepository;
 import com.destiny.club.repository.GroupRepository;
@@ -54,11 +53,14 @@ public class DashboardController {
         long pendingLoans = loanService.findAll().stream().filter(l -> l.getStatus() == LoanStatus.PENDING).count();
         model.addAttribute("pendingLoans", pendingLoans);
 
-        BigDecimal cashBalance;
+        // Sum every payment-channel account (Cash at Bank, Cash at Hand, and any others added
+        // since) rather than one hardcoded account, so the tile stays correct as channels change.
+        BigDecimal cashBalance = BigDecimal.ZERO;
         try {
-            var account = accountingService.getAccountByCode(GLCodes.CASH_AND_BANK);
-            var ledger = accountingService.generateGeneralLedger(account.getId(), null, LocalDate.now());
-            cashBalance = ledger.getClosingBalance();
+            for (var account : accountingService.findCashAccounts()) {
+                var ledger = accountingService.generateGeneralLedger(account.getId(), null, LocalDate.now());
+                cashBalance = cashBalance.add(ledger.getClosingBalance());
+            }
         } catch (Exception ex) {
             cashBalance = BigDecimal.ZERO;
         }

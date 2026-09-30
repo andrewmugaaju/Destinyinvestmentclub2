@@ -11,6 +11,8 @@ import java.time.LocalDate;
 public class LedgerRow {
     private final LocalDate date;
     private final String reference;
+    /** The member/group this transaction was for, e.g. "Jane Mukasa" - null when there isn't one (a manual entry). */
+    private final String personName;
     private final String description;
     /** Plain-English label for what this entry actually is - "Savings Deposit", "Loan Repayment", etc. */
     private final String typeLabel;
