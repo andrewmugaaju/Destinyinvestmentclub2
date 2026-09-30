@@ -104,7 +104,7 @@
                         <input type="hidden" name="loanAccountId" th:if="${loanAccounts.size() == 1}" th:value="${loanAccounts[0].id}"/>
                         <select class="form-select form-select-sm mt-1" name="loanAccountId" th:if="${loanAccounts.size() > 1}">
                             <option th:each="l : ${loanAccounts}" th:value="${l.id}"
-                                    th:text="${l.loanAccountNumber} + ' - ' + ${l.loanProduct.name} + ' (owing ' + ${#numbers.formatDecimal(l.totalOutstanding,1,'COMMA',2,'POINT')} + ')'"></option>
+                                    th:text="${l.loanAccountNumber} + ' (owing ' + ${#numbers.formatDecimal(l.totalOutstanding,1,'COMMA',2,'POINT')} + ')'"></option>
                         </select>
                         <div class="form-text" th:if="${#lists.isEmpty(loanAccounts)}">No active loan</div>
                     </div>

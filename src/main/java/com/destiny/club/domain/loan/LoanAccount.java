@@ -35,10 +35,6 @@ public class LoanAccount {
     @JoinColumn(name = "group_id")
     private Group group;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "loan_product_id", nullable = false)
-    private LoanProduct loanProduct;
-
     @Column(nullable = false, precision = 18, scale = 2)
     private BigDecimal principalAmount;
 

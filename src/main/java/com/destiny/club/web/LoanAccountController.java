@@ -22,7 +22,6 @@ import java.time.LocalDate;
 public class LoanAccountController {
 
     private final LoanService loanService;
-    private final LoanProductService loanProductService;
     private final ClientService clientService;
     private final GroupService groupService;
     private final AccountingService accountingService;
@@ -39,7 +38,6 @@ public class LoanAccountController {
                            Model model) {
         model.addAttribute("clients", clientService.findAll());
         model.addAttribute("groups", groupService.findAll());
-        model.addAttribute("products", loanProductService.findActive());
         model.addAttribute("selectedClientId", clientId);
         model.addAttribute("selectedGroupId", groupId);
         return "loan-accounts/form";
@@ -48,15 +46,14 @@ public class LoanAccountController {
     @PostMapping
     public String apply(@RequestParam(required = false) Long clientId,
                          @RequestParam(required = false) Long groupId,
-                         @RequestParam Long productId,
                          @RequestParam BigDecimal principalAmount,
-                         @RequestParam(required = false) Integer termMonths,
+                         @RequestParam BigDecimal annualInterestRate,
+                         @RequestParam Integer termMonths,
                          @RequestParam(required = false) BigDecimal applicationFeeAmount,
                          RedirectAttributes redirectAttributes) {
         Client client = clientId != null ? clientService.getById(clientId) : null;
         Group group = groupId != null ? groupService.getById(groupId) : null;
-        var product = loanProductService.getById(productId);
-        LoanAccount loan = loanService.apply(client, group, product, principalAmount, termMonths, applicationFeeAmount);
+        LoanAccount loan = loanService.apply(client, group, principalAmount, annualInterestRate, termMonths, applicationFeeAmount);
         redirectAttributes.addFlashAttribute("successMessage", "Loan application " + loan.getLoanAccountNumber() + " submitted");
         return "redirect:/loan-accounts/" + loan.getId();
     }

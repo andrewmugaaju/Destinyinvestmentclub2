@@ -71,15 +71,21 @@ public class LoanService {
     }
 
     @Transactional
-    public LoanAccount apply(Client client, Group group, LoanProduct product, BigDecimal principal, Integer termMonths,
-                              BigDecimal applicationFeeAmount) {
+    public LoanAccount apply(Client client, Group group, BigDecimal principal, BigDecimal annualInterestRate,
+                              Integer termMonths, BigDecimal applicationFeeAmount) {
         if (client == null && group == null) {
             throw new BusinessException("A loan must belong to a client or a group");
         }
         if (principal == null || principal.compareTo(BigDecimal.ZERO) <= 0) {
             throw new BusinessException("Loan principal must be greater than zero");
         }
-        BigDecimal fee = applicationFeeAmount != null ? applicationFeeAmount : product.getApplicationFeeAmount();
+        if (annualInterestRate == null || annualInterestRate.compareTo(BigDecimal.ZERO) < 0) {
+            throw new BusinessException("Annual interest rate must be zero or greater");
+        }
+        if (termMonths == null || termMonths <= 0) {
+            throw new BusinessException("Loan term must be greater than zero months");
+        }
+        BigDecimal fee = applicationFeeAmount != null ? applicationFeeAmount : BigDecimal.ZERO;
         if (fee.compareTo(BigDecimal.ZERO) < 0) {
             throw new BusinessException("Application fee cannot be negative");
         }
@@ -89,10 +95,9 @@ public class LoanService {
         LoanAccount loan = new LoanAccount();
         loan.setClient(client);
         loan.setGroup(group);
-        loan.setLoanProduct(product);
         loan.setPrincipalAmount(principal);
-        loan.setAnnualInterestRate(product.getAnnualInterestRate());
-        loan.setTermMonths(termMonths != null ? termMonths : product.getDefaultTermMonths());
+        loan.setAnnualInterestRate(annualInterestRate);
+        loan.setTermMonths(termMonths);
         loan.setApplicationFeeAmount(fee);
         loan.setApplicationDate(LocalDate.now());
         loan.setStatus(LoanStatus.PENDING);

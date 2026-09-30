@@ -51,14 +51,14 @@
     <div class="card p-3">
         <table class="table table-sm table-report">
             <thead>
-            <tr><th>Date</th><th>Loan #</th><th>Borrower</th><th>Product</th><th>Type</th><th class="money">Amount</th><th class="money">Principal</th><th class="money">Interest</th><th>Posted By</th><th>Journal</th><th></th></tr>
+            <tr><th>Date</th><th>Loan #</th><th>Borrower</th><th>Rate</th><th>Type</th><th class="money">Amount</th><th class="money">Principal</th><th class="money">Interest</th><th>Posted By</th><th>Journal</th><th></th></tr>
             </thead>
             <tbody>
             <tr th:each="t : ${transactions}" th:classappend="${t.voided} ? 'text-muted' : ''">
                 <td th:text="${t.transactionDate}">-</td>
                 <td><a th:href="@{/loan-accounts/{id}(id=${t.loanAccount.id})}" th:text="${t.loanAccount.loanAccountNumber}">LN000001</a></td>
                 <td th:text="${t.loanAccount.borrowerName}">-</td>
-                <td th:text="${t.loanAccount.loanProduct.name}">-</td>
+                <td th:text="${t.loanAccount.annualInterestRate} + '%'">-</td>
                 <td>
                     <span class="badge" th:classappend="${t.transactionType.name() == 'DISBURSEMENT'} ? 'bg-primary' : 'bg-success'" th:text="${t.transactionType}">-</span>
                     <span th:if="${t.voided}" class="badge bg-danger">VOIDED</span>

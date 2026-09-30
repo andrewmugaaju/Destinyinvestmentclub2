@@ -254,7 +254,7 @@ public class DepositController {
         }
         var loan = loanService.getById(allocation.getTargetAccountId());
         return new DepositAllocationView(allocation.getAllocationType(), loan.getLoanAccountNumber(),
-                loan.getLoanProduct().getName(), allocation.getAmount());
+                loan.getAnnualInterestRate() + "% p.a.", allocation.getAmount());
     }
 
     @PostMapping("/{id}/edit")

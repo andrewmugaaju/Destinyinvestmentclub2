@@ -5,7 +5,6 @@ import com.destiny.club.domain.accounting.GLCodes;
 import com.destiny.club.domain.client.Client;
 import com.destiny.club.domain.client.Group;
 import com.destiny.club.domain.loan.LoanAccount;
-import com.destiny.club.domain.loan.LoanProduct;
 import com.destiny.club.domain.savings.SavingsAccount;
 import com.destiny.club.domain.savings.SavingsProduct;
 import com.destiny.club.dto.DepositAllocationForm;
@@ -45,8 +44,6 @@ class InvestmentClubApplicationTests {
     @Autowired
     private SavingsProductService savingsProductService;
     @Autowired
-    private LoanProductService loanProductService;
-    @Autowired
     private SavingsService savingsService;
     @Autowired
     private LoanService loanService;
@@ -76,17 +73,10 @@ class InvestmentClubApplicationTests {
         savingsProduct.setMinOpeningBalance(BigDecimal.ZERO);
         savingsProduct = savingsProductService.save(savingsProduct);
 
-        LoanProduct loanProduct = new LoanProduct();
-        loanProduct.setCode("LP-TEST");
-        loanProduct.setName("Business Loan");
-        loanProduct.setAnnualInterestRate(new BigDecimal("12.000"));
-        loanProduct.setDefaultTermMonths(6);
-        loanProduct = loanProductService.save(loanProduct);
-
         SavingsAccount savingsAccount = savingsService.openAccount(client, savingsProduct, LocalDate.now());
         GLAccount cashAccount = accountingService.getAccountByCode(GLCodes.CASH_AND_BANK);
 
-        LoanAccount loan = loanService.apply(client, null, loanProduct, new BigDecimal("1000.00"), 6, new BigDecimal("20.00"));
+        LoanAccount loan = loanService.apply(client, null, new BigDecimal("1000.00"), new BigDecimal("12.000"), 6, new BigDecimal("20.00"));
         loan = loanService.approve(loan.getId(), "tester");
         loan = loanService.disburse(loan.getId(), LocalDate.now(), "tester", cashAccount);
         assertThat(loanRepaymentInstallmentRepository.findByLoanAccountIdOrderByInstallmentNumberAsc(loan.getId())).hasSize(6);

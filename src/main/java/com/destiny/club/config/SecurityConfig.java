@@ -73,7 +73,7 @@ public class SecurityConfig {
                         .requestMatchers("/reports/**").hasAnyRole("ADMIN", "MANAGER", "ACCOUNTANT")
                         .requestMatchers("/journal/**").hasAnyRole("ADMIN", "ACCOUNTANT")
                         .requestMatchers("/gl-accounts/**").hasAnyRole("ADMIN", "ACCOUNTANT")
-                        .requestMatchers("/savings-products/**", "/loan-products/**").hasAnyRole("ADMIN", "MANAGER")
+                        .requestMatchers("/savings-products/**").hasAnyRole("ADMIN", "MANAGER")
                         // A Loan Officer's one and only allowed area: the Deposit Screen.
                         .requestMatchers("/deposits/**").authenticated()
                         .anyRequest().hasAnyRole(NON_LOAN_OFFICER_ROLES)
