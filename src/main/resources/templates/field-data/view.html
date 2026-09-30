@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/head :: head(title='Field Collection')}"></head>
+<body>
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+<main class="container">
+    <div th:replace="~{fragments/alerts :: alerts}"></div>
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <h2 class="mb-0">Field Collection #<span th:text="${entry.id}">1</span></h2>
+        <span class="badge fs-6" th:classappend="${entry.savingsTransaction.voided} ? 'bg-danger' : 'bg-success'"
+              th:text="${entry.savingsTransaction.voided} ? 'VOIDED' : 'ACTIVE'">ACTIVE</span>
+    </div>
+
+    <div class="card p-3 mb-3">
+        <div class="row">
+            <div class="col-md-3"><strong>Member</strong><br/><a th:href="@{/clients/{id}(id=${entry.client.id})}" th:text="${entry.client.fullName}">-</a></div>
+            <div class="col-md-3"><strong>Savings Account</strong><br/>
+                <a th:href="@{/savings-accounts/{id}(id=${entry.savingsTransaction.savingsAccount.id})}" th:text="${entry.savingsTransaction.savingsAccount.accountNumber}">-</a>
+            </div>
+            <div class="col-md-2"><strong>Date</strong><br/><span th:text="${entry.savingsTransaction.transactionDate}">-</span></div>
+            <div class="col-md-2"><strong>Amount</strong><br/><span th:text="${#numbers.formatDecimal(entry.savingsTransaction.amount,1,'COMMA',2,'POINT')}">0.00</span></div>
+            <div class="col-md-2"><strong>Balance After</strong><br/><span th:text="${#numbers.formatDecimal(entry.savingsTransaction.runningBalance,1,'COMMA',2,'POINT')}">0.00</span></div>
+        </div>
+        <div class="row mt-2">
+            <div class="col-md-3"><strong>Field Officer 1</strong><br/><span th:text="${entry.collectorOneName}">-</span></div>
+            <div class="col-md-3"><strong>Field Officer 2</strong><br/><span th:text="${entry.collectorTwoName} ?: '-'">-</span></div>
+            <div class="col-md-3"><strong>Posted By</strong><br/><span th:text="${entry.createdBy}">-</span></div>
+            <div class="col-md-3"><strong>Journal Entry</strong><br/>
+                <a th:if="${entry.savingsTransaction.journalEntryId != null}" th:href="@{/journal/{id}(id=${entry.savingsTransaction.journalEntryId})}"
+                   th:text="'#' + ${entry.savingsTransaction.journalEntryId}">#1</a>
+            </div>
+        </div>
+        <div class="row mt-2">
+            <div class="col-md-12"><strong>Notes</strong><br/><span th:text="${entry.savingsTransaction.narration} ?: '-'">-</span></div>
+        </div>
+        <div class="row mt-2" th:if="${entry.savingsTransaction.voided}">
+            <div class="col-12">
+                <div class="alert alert-danger mb-0 py-2">
+                    Voided by <strong th:text="${entry.savingsTransaction.voidedBy}">-</strong> on <span th:text="${entry.savingsTransaction.voidedAt}">-</span>
+                    <span th:if="${entry.savingsTransaction.voidReason != null and !entry.savingsTransaction.voidReason.isEmpty()}"> - Reason: <span th:text="${entry.savingsTransaction.voidReason}">-</span></span>
+                    <span th:if="${entry.savingsTransaction.reversalJournalEntryId != null}"> (reversing entry
+                        <a th:href="@{/journal/{id}(id=${entry.savingsTransaction.reversalJournalEntryId})}" th:text="'#' + ${entry.savingsTransaction.reversalJournalEntryId}">#2</a>)
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card p-3 mb-3" th:if="${!entry.savingsTransaction.voided}" sec:authorize="hasAnyRole('ADMIN','MANAGER')">
+        <h5>Edit Notes</h5>
+        <form th:action="@{/field-data/{id}/edit(id=${entry.id})}" method="post" class="row g-2 align-items-end">
+            <div class="col-md-8">
+                <input type="text" class="form-control" name="narration" th:value="${entry.savingsTransaction.narration}"/>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-outline-primary w-100">Save</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="card p-3" th:if="${!entry.savingsTransaction.voided}" sec:authorize="hasAnyRole('ADMIN','MANAGER')">
+        <h5>Void This Collection</h5>
+        <p class="text-muted small">Reverses the journal entry and recalculates the member's savings balance. The original stays in the history, marked voided.</p>
+        <form th:action="@{/field-data/{id}/void(id=${entry.id})}" method="post"
+              onsubmit="return confirm('Void this field collection? This cannot be undone.');" class="row g-2 align-items-end">
+            <div class="col-md-8">
+                <label class="form-label">Reason</label>
+                <input type="text" class="form-control" name="reason" placeholder="e.g. entered in error" required/>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-outline-danger w-100">Void Collection</button>
+            </div>
+        </form>
+    </div>
+</main>
+</body>
+</html>

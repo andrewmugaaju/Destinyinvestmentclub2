@@ -10,6 +10,7 @@ public final class GLCodes {
     }
 
     public static final String CASH_AND_BANK = "1000";
+    public static final String FIELD_CASH_CONTROL = "3380";
     public static final String LOANS_RECEIVABLE = "1100";
     public static final String MEMBER_SAVINGS = "2000";
     public static final String SHARE_CAPITAL = "3000";

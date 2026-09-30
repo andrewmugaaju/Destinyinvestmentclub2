@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Field Data')}"></head>
+<body>
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+<main class="container">
+    <div th:replace="~{fragments/alerts :: alerts}"></div>
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <h2 class="mb-0">Field Data</h2>
+            <p class="text-muted mb-0">Record a savings collection made out in the field. Any officer can collect from any member.</p>
+        </div>
+        <a class="btn btn-outline-secondary" href="/field-data"><i class="bi bi-clock-history"></i> Field Data Report</a>
+    </div>
+
+    <div class="card p-4 mt-3">
+        <form th:action="@{/field-data}" method="post" id="fieldDataForm">
+            <input type="hidden" name="clientId" th:value="${selectedClientId}"/>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-5">
+                    <label class="form-label">Member <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="memberSearch" list="memberOptions"
+                           placeholder="Search by name or client #..." autocomplete="off"
+                           th:value="${selectedMemberLabel}" oninput="onMemberSearchInput(this)"/>
+                    <datalist id="memberOptions">
+                        <option th:each="c : ${clients}" th:value="${c.fullName} + ' (' + ${c.clientNumber} + ')'" th:attr="data-id=${c.id}"></option>
+                    </datalist>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Date <span class="text-danger">*</span></label>
+                    <input type="date" class="form-control" name="transactionDate" th:value="${T(java.time.LocalDate).now()}" required/>
+                </div>
+            </div>
+
+            <div th:if="${selectedClientId == null}" class="text-muted">Select a member above to continue.</div>
+
+            <div th:if="${selectedClientId != null}">
+                <div class="alert alert-warning" th:if="${#lists.isEmpty(savingsProducts)}">
+                    There are no active savings products configured yet.
+                </div>
+
+                <div th:if="${!#lists.isEmpty(savingsProducts)}">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Savings Product <span class="text-danger">*</span></label>
+                            <select class="form-select" name="savingsProductId" required>
+                                <option th:each="p : ${savingsProducts}" th:value="${p.id}"
+                                        th:with="existing=${existingByProductId != null ? existingByProductId.get(p.id) : null}"
+                                        th:text="${p.name} + (${existing} != null ? ' (existing bal ' + ${#numbers.formatDecimal(existing.balance,1,'COMMA',2,'POINT')} + ')' : ' (new account)')"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Amount Collected <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">UGX</span>
+                                <input type="number" step="0.01" min="0.01" class="form-control" name="amount" required/>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr/>
+                    <h6 class="text-uppercase text-muted small mb-3"><i class="bi bi-people"></i> Field Officers (today's pair)</h6>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Field Officer 1 <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="collectorOneName" list="collectorOptions" required/>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Field Officer 2</label>
+                            <input type="text" class="form-control" name="collectorTwoName" list="collectorOptions"/>
+                        </div>
+                        <datalist id="collectorOptions">
+                            <option th:each="name : ${knownCollectors}" th:value="${name}"></option>
+                        </datalist>
+                        <div class="col-md-4">
+                            <label class="form-label">Notes</label>
+                            <input type="text" class="form-control" name="narration" placeholder="Optional"/>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-success mt-4"><i class="bi bi-check-circle"></i> Save Collection</button>
+                    <div class="form-text mt-2">Posted to the Field Cash Control account, not directly to a till - it clears once the cash is banked.</div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        function onMemberSearchInput(el) {
+            var options = document.querySelectorAll('#memberOptions option');
+            for (var i = 0; i < options.length; i++) {
+                if (options[i].value === el.value) {
+                    window.location.href = '/field-data/new?clientId=' + encodeURIComponent(options[i].getAttribute('data-id'));
+                    return;
+                }
+            }
+        }
+    </script>
+</main>
+</body>
+</html>

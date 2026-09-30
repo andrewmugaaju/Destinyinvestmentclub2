@@ -317,6 +317,7 @@ public class AccountingService {
         return switch (sourceType) {
             case "SAVINGS_DEPOSIT" -> "Savings Deposit";
             case "SAVINGS_WITHDRAWAL" -> "Savings Withdrawal";
+            case "FIELD_COLLECTION" -> "Field Collection";
             case "LOAN_DISBURSEMENT" -> "Loan Disbursement";
             case "LOAN_REPAYMENT" -> "Loan Repayment";
             case "DEPOSIT_TRANSACTION" -> "Combined Deposit";
@@ -339,7 +340,7 @@ public class AccountingService {
         Long sourceId = entry.getSourceId();
         if (sourceId != null) {
             switch (entry.getSourceType()) {
-                case "SAVINGS_DEPOSIT", "SAVINGS_WITHDRAWAL" -> {
+                case "SAVINGS_DEPOSIT", "SAVINGS_WITHDRAWAL", "FIELD_COLLECTION" -> {
                     return "/savings-accounts/transactions/" + sourceId;
                 }
                 case "LOAN_DISBURSEMENT", "LOAN_REPAYMENT" -> {
@@ -368,7 +369,7 @@ public class AccountingService {
             return null;
         }
         return switch (entry.getSourceType()) {
-            case "SAVINGS_DEPOSIT", "SAVINGS_WITHDRAWAL" -> savingsTransactionRepository.findById(sourceId)
+            case "SAVINGS_DEPOSIT", "SAVINGS_WITHDRAWAL", "FIELD_COLLECTION" -> savingsTransactionRepository.findById(sourceId)
                     .map(t -> t.getSavingsAccount().getOwnerName())
                     .orElse(null);
             case "LOAN_DISBURSEMENT", "LOAN_REPAYMENT" -> loanTransactionRepository.findById(sourceId)
