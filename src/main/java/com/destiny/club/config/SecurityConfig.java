@@ -62,7 +62,10 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/login", "/css/**", "/js/**", "/webjars/**", "/error").permitAll()
+                        // /logout must be explicitly listed here, not just left to logout().permitAll() -
+                        // that alone doesn't override the anyRequest().hasAnyRole(...) catch-all below,
+                        // so a Loan Officer (who matches none of those roles) got a 403 on logging out.
+                        .requestMatchers("/login", "/logout", "/css/**", "/js/**", "/webjars/**", "/error").permitAll()
                         .requestMatchers("/users/**").hasAnyRole("ADMIN", "MANAGER")
                         .requestMatchers("/reports/member-statement/**", "/reports/member-statement",
                                 "/reports/loans/**", "/reports/loans", "/reports/savings/**", "/reports/savings",
