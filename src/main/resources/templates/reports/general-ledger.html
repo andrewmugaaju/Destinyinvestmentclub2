@@ -37,26 +37,30 @@
             </a>
         </div>
         <table class="table table-sm">
-            <thead><tr><th>Date</th><th>Reference</th><th>Description</th><th class="money">Debit</th><th class="money">Credit</th><th class="money">Balance</th></tr></thead>
+            <thead><tr><th>Date</th><th>Type</th><th>Reference</th><th>Description</th><th class="money">Debit</th><th class="money">Credit</th><th class="money">Balance</th><th></th></tr></thead>
             <tbody>
             <tr>
-                <td colspan="5" class="fw-bold">Opening Balance</td>
+                <td colspan="6" class="fw-bold">Opening Balance</td>
                 <td class="money fw-bold" th:text="${#numbers.formatDecimal(report.openingBalance,1,'COMMA',2,'POINT')}">0.00</td>
+                <td></td>
             </tr>
             <tr th:each="r : ${report.rows}">
                 <td th:text="${r.date}">-</td>
+                <td><span class="badge bg-secondary" th:text="${r.typeLabel}">-</span></td>
                 <td th:text="${r.reference}">-</td>
                 <td th:text="${r.description}">-</td>
                 <td class="money" th:text="${r.debit.signum() != 0} ? ${#numbers.formatDecimal(r.debit,1,'COMMA',2,'POINT')} : ''"></td>
                 <td class="money" th:text="${r.credit.signum() != 0} ? ${#numbers.formatDecimal(r.credit,1,'COMMA',2,'POINT')} : ''"></td>
                 <td class="money" th:text="${#numbers.formatDecimal(r.runningBalance,1,'COMMA',2,'POINT')}">0.00</td>
+                <td><a class="btn btn-sm btn-outline-primary" th:href="@{${r.viewUrl}}">View</a></td>
             </tr>
-            <tr th:if="${#lists.isEmpty(report.rows)}"><td colspan="6" class="text-muted">No movement in this period.</td></tr>
+            <tr th:if="${#lists.isEmpty(report.rows)}"><td colspan="8" class="text-muted">No movement in this period.</td></tr>
             </tbody>
             <tfoot>
             <tr class="fw-bold">
-                <td colspan="5">Closing Balance</td>
+                <td colspan="6">Closing Balance</td>
                 <td class="money" th:text="${#numbers.formatDecimal(report.closingBalance,1,'COMMA',2,'POINT')}">0.00</td>
+                <td></td>
             </tr>
             </tfoot>
         </table>

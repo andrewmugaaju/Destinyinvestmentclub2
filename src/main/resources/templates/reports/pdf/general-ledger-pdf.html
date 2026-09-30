@@ -15,26 +15,27 @@
 
     <table>
         <thead>
-        <tr><th>Date</th><th>Reference</th><th>Description</th><th class="money">Debit</th><th class="money">Credit</th><th class="money">Balance</th></tr>
+        <tr><th>Date</th><th>Type</th><th>Reference</th><th>Description</th><th class="money">Debit</th><th class="money">Credit</th><th class="money">Balance</th></tr>
         </thead>
         <tbody>
         <tr class="opening-row">
-            <td colspan="5">Opening Balance</td>
+            <td colspan="6">Opening Balance</td>
             <td class="money" th:text="${#numbers.formatDecimal(report.openingBalance,1,'COMMA',2,'POINT')}">0.00</td>
         </tr>
         <tr th:each="r : ${report.rows}">
             <td th:text="${r.date}">-</td>
+            <td th:text="${r.typeLabel}">-</td>
             <td th:text="${r.reference}">-</td>
             <td th:text="${r.description}">-</td>
             <td class="money" th:text="${r.debit.signum() != 0} ? ${#numbers.formatDecimal(r.debit,1,'COMMA',2,'POINT')} : ''"></td>
             <td class="money" th:text="${r.credit.signum() != 0} ? ${#numbers.formatDecimal(r.credit,1,'COMMA',2,'POINT')} : ''"></td>
             <td class="money" th:text="${#numbers.formatDecimal(r.runningBalance,1,'COMMA',2,'POINT')}">0.00</td>
         </tr>
-        <tr th:if="${#lists.isEmpty(report.rows)}"><td colspan="6">No movement in this period.</td></tr>
+        <tr th:if="${#lists.isEmpty(report.rows)}"><td colspan="7">No movement in this period.</td></tr>
         </tbody>
         <tfoot>
         <tr>
-            <td colspan="5">Closing Balance</td>
+            <td colspan="6">Closing Balance</td>
             <td class="money" th:text="${#numbers.formatDecimal(report.closingBalance,1,'COMMA',2,'POINT')}">0.00</td>
         </tr>
         </tfoot>

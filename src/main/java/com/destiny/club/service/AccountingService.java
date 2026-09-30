@@ -289,13 +289,63 @@ public class AccountingService {
                     ? debit.subtract(credit)
                     : credit.subtract(debit);
             running = running.add(signed);
+            JournalEntry entry = line.getJournalEntry();
             rows.add(new LedgerRow(
-                    line.getJournalEntry().getTransactionDate(),
-                    line.getJournalEntry().getReference(),
-                    line.getNarration() != null ? line.getNarration() : line.getJournalEntry().getDescription(),
+                    entry.getTransactionDate(),
+                    entry.getReference(),
+                    line.getNarration() != null ? line.getNarration() : entry.getDescription(),
+                    sourceTypeLabel(entry.getSourceType()),
+                    transactionViewUrl(entry),
                     debit, credit, running));
         }
 
         return new GeneralLedgerReport(account, fromDate, toDate, opening, rows, running);
+    }
+
+    /** Plain-English label for a journal entry's source type, for the General Ledger's Type column. */
+    private String sourceTypeLabel(String sourceType) {
+        if (sourceType == null) {
+            return "-";
+        }
+        return switch (sourceType) {
+            case "SAVINGS_DEPOSIT" -> "Savings Deposit";
+            case "SAVINGS_WITHDRAWAL" -> "Savings Withdrawal";
+            case "LOAN_DISBURSEMENT" -> "Loan Disbursement";
+            case "LOAN_REPAYMENT" -> "Loan Repayment";
+            case "DEPOSIT_TRANSACTION" -> "Combined Deposit";
+            case "MANUAL" -> "Manual Entry";
+            case "REVERSAL" -> "Reversal";
+            default -> {
+                String lower = sourceType.toLowerCase().replace('_', ' ');
+                yield Character.toUpperCase(lower.charAt(0)) + lower.substring(1);
+            }
+        };
+    }
+
+    /**
+     * Where "View" on a General Ledger row should take you - the specific savings/loan
+     * transaction or deposit that actually created this entry (with its own Edit/Void actions),
+     * falling back to the journal entry itself for manual entries, reversals, or anything else
+     * without its own dedicated screen.
+     */
+    private String transactionViewUrl(JournalEntry entry) {
+        Long sourceId = entry.getSourceId();
+        if (sourceId != null) {
+            switch (entry.getSourceType()) {
+                case "SAVINGS_DEPOSIT", "SAVINGS_WITHDRAWAL" -> {
+                    return "/savings-accounts/transactions/" + sourceId;
+                }
+                case "LOAN_DISBURSEMENT", "LOAN_REPAYMENT" -> {
+                    return "/loan-accounts/transactions/" + sourceId;
+                }
+                case "DEPOSIT_TRANSACTION" -> {
+                    return "/deposits/" + sourceId;
+                }
+                default -> {
+                    // fall through to the journal entry itself
+                }
+            }
+        }
+        return "/journal/" + entry.getId();
     }
 }
